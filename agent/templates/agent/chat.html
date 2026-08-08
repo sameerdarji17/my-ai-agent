@@ -832,7 +832,7 @@
     if (menuGenerateImage) {
       menuGenerateImage.addEventListener('click', () => {
         attachMenu.classList.remove('open');
-        if ({{ is_premium|yesno:"true,false" }}) {
+        if ("{{ is_premium }}" === "True" || "{{ is_premium }}" === "true") {
           input.value = 'Generate an image of ';
           input.focus();
           input.dispatchEvent(new Event('input'));

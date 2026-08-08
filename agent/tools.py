@@ -24,6 +24,7 @@ import uuid
 
 import requests
 from django.conf import settings
+from duckduckgo_search import DDGS
 
 # ---------------------------------------------------------------------------
 # Tool definitions (provider-neutral; converted per-provider in orchestrator.py)
@@ -32,7 +33,7 @@ from django.conf import settings
 TOOL_DEFINITIONS = [
     {
         "name": "web_search",
-        "description": "Search the live web for current info, facts, news, or prices.",
+        "description": "Search the live web for current info, facts, news, prices, medical details, astrology, or academic topics.",
         "parameters": {
             "type": "object",
             "properties": {
@@ -136,43 +137,54 @@ def to_anthropic_tools(defs=TOOL_DEFINITIONS):
 # ---------------------------------------------------------------------------
 
 def execute_web_search(tool_input: dict) -> str:
+    """Perform a web search using Tavily first, fallback to DuckDuckGo if Tavily fails or key is missing."""
     query = tool_input.get("query", "")
-    api_key = settings.TAVILY_API_KEY
+    api_key = getattr(settings, "TAVILY_API_KEY", None)
 
-    if not api_key:
-        return (
-            "web_search is not configured: set TAVILY_API_KEY in your .env file "
-            "(get a free key at tavily.com). Skipping search for now."
-        )
+    # 1. Try Tavily Search if API key exists
+    if api_key:
+        try:
+            resp = requests.post(
+                "https://api.tavily.com/search",
+                json={
+                    "api_key": api_key,
+                    "query": query,
+                    "max_results": 4,
+                    "search_depth": "basic",
+                    "include_answer": True,
+                },
+                timeout=10,
+            )
+            if resp.status_code == 200:
+                data = resp.json()
+                results = data.get("results", [])
+                if results:
+                    lines = []
+                    quick_answer = data.get("answer")
+                    if quick_answer:
+                        lines.append(f"Quick answer: {quick_answer}\n")
 
+                    for i, r in enumerate(results, 1):
+                        snippet = (r.get("content") or "")[:300]
+                        lines.append(f"[Source {i}] {r.get('title')}\nURL: {r.get('url')}\n{snippet}\n")
+
+                    return "\n".join(lines)
+        except Exception:
+            pass  # Fallback to DuckDuckGo if Tavily times out or errors
+
+    # 2. Fallback to DuckDuckGo Search (100% Free, No API Key needed)
     try:
-        resp = requests.post(
-            "https://api.tavily.com/search",
-            json={
-                "api_key": api_key,
-                "query": query,
-                "max_results": 4,
-                "search_depth": "basic",
-                "include_answer": True,
-            },
-            timeout=15,
-        )
-        resp.raise_for_status()
-        data = resp.json()
-        results = data.get("results", [])
-        if not results:
-            return "No results found for this query. Try a more specific or differently-worded search."
-
-        lines = []
-        quick_answer = data.get("answer")
-        if quick_answer:
-            lines.append(f"Quick answer (verify against sources below): {quick_answer}\n")
-
-        for i, r in enumerate(results, 1):
-            snippet = (r.get("content") or "")[:300]
-            lines.append(f"[Source {i}] {r.get('title')}\nURL: {r.get('url')}\n{snippet}\n")
-
-        return "\n".join(lines)
+        ddg = DDGS()
+        results = list(ddg.text(query, max_results=4))
+        if results:
+            lines = []
+            for i, r in enumerate(results, 1):
+                title = r.get("title", "")
+                snippet = (r.get("body") or "")[:300]
+                url = r.get("href", "")
+                lines.append(f"[Source {i}] {title}\nURL: {url}\n{snippet}\n")
+            return "\n".join(lines)
+        return "No results found for this query. Try a more specific or differently-worded search."
     except Exception as exc:
         return f"web_search failed: {exc}"
 
@@ -217,11 +229,9 @@ IMAGE_EXTENSIONS = {".jpg", ".jpeg", ".png", ".gif", ".webp", ".bmp", ".tiff"}
 def _ocr_image(path: str) -> str:
     """
     Extracts any text visible in an image (e.g. an error message screenshot)
-    using OCR.space's free API — a well-established OCR service (25,000
-    free requests/month, no credit card). Falls back to a clear message if
-    OCR isn't configured or the image has no readable text.
+    using OCR.space's free API.
     """
-    api_key = settings.OCR_SPACE_API_KEY or "helloworld"  # "helloworld" = OCR.space's public demo key (low limits)
+    api_key = getattr(settings, "OCR_SPACE_API_KEY", None) or "helloworld"
     try:
         with open(path, "rb") as f:
             resp = requests.post(
@@ -270,11 +280,9 @@ def execute_read_file(tool_input: dict) -> str:
                 "Please re-save/upload as .docx or .pdf."
             )
         else:
-            # Plain text / code / markdown / csv / json etc.
             with open(path, "r", errors="replace") as f:
                 content = f.read()
 
-        # Truncate very large content so we don't blow the context window
         if len(content) > 12000:
             content = content[:12000] + "\n... [truncated — file is longer than shown here]"
         return content
@@ -291,17 +299,6 @@ def execute_list_files(tool_input: dict) -> str:
 
 
 def execute_code(tool_input: dict) -> str:
-    """
-    Run Python code in a subprocess with:
-      - a hard wall-clock timeout
-      - a fresh temp working directory
-      - stdout/stderr captured and length-capped
-
-    NOTE: this isolates against *accidental* mistakes and infinite loops, but
-    it does NOT fully isolate against malicious code (it shares the host's
-    filesystem/network namespace). For production, replace this with a
-    Docker-based or E2B-based sandbox — see README.md.
-    """
     code = tool_input.get("code", "")
     run_id = uuid.uuid4().hex
     run_dir = os.path.join(settings.SANDBOX_RUNS_ROOT, run_id)
@@ -339,11 +336,6 @@ def execute_code(tool_input: dict) -> str:
 # ---------------------------------------------------------------------------
 
 def execute_generate_image(tool_input: dict) -> str:
-    """
-    Uses Pollinations.ai's free, keyless image generation endpoint. The URL
-    itself renders the image on-the-fly (no local storage needed) — the
-    frontend detects image URLs in the reply and displays them inline.
-    """
     prompt = tool_input.get("prompt", "").strip()
     if not prompt:
         return "generate_image failed: no prompt provided."
