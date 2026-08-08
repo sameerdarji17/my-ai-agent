@@ -19,8 +19,8 @@ from .serializers import ChatRequestSerializer, ConversationSerializer
 from .forms import SignupForm
 
 FREE_ANON_MESSAGE_LIMIT = 3
-FREE_MESSAGE_LIMIT = 8          # messages allowed per rolling window
-FREE_WINDOW_HOURS = 5           # window length in hours (like Claude's free tier)
+FREE_MESSAGE_LIMIT = 8  # messages allowed per rolling window
+FREE_WINDOW_HOURS = 5  # window length in hours
 
 
 def chat_page(request):
@@ -73,7 +73,7 @@ def _send_welcome_email(user):
         ),
         from_email=settings.DEFAULT_FROM_EMAIL,
         recipient_list=[user.email],
-        fail_silently=True,  # don't block login if this optional email fails
+        fail_silently=True,
     )
 
 
@@ -109,19 +109,7 @@ def verify_email_view(request, uidb64, token):
 class AgentChatView(APIView):
     """
     POST /api/agent/chat/
-    body: {"conversation_id": "<uuid, optional>", "message": "hello"}
-
-    If conversation_id is omitted, a new conversation is created and its id
-    is returned so the client can continue the thread on subsequent calls.
-
-    - Anonymous users: FREE_ANON_MESSAGE_LIMIT messages per browser session,
-      then login_required=True (in production only; DEBUG=True bypasses this
-      for local development).
-    - Logged-in Free users: FREE_MESSAGE_LIMIT messages per rolling FREE_WINDOW_HOURS window
-      (like Claude's free tier — limit resets a fixed number of hours after your
-      oldest message in the window, not at midnight).
-    - Logged-in Premium users (active subscription): unlimited, plus the
-      generate_image tool is unlocked.
+    Handles limits, authentication checks, and routes messages to orchestrator.
     """
 
     def post(self, request):
@@ -137,7 +125,8 @@ class AgentChatView(APIView):
             sub, _ = Subscription.objects.get_or_create(user=request.user, defaults={"plan": "free", "status": "paid"})
             is_premium = sub.is_premium
 
-            if not is_premium and not settings.DEBUG:
+            # Check Free User Message Limit
+            if not is_premium:
                 from django.utils import timezone
                 from datetime import timedelta
 
@@ -146,9 +135,11 @@ class AgentChatView(APIView):
                     role="user", conversation__owner=request.user, created_at__gte=window_start
                 ).order_by("created_at")
                 count = messages_in_window.count()
+
                 if count >= FREE_MESSAGE_LIMIT:
                     earliest = messages_in_window.first()
-                    reset_time = earliest.created_at + timedelta(hours=FREE_WINDOW_HOURS)
+                    reset_time = earliest.created_at + timedelta(
+                        hours=FREE_WINDOW_HOURS) if earliest else timezone.now()
                     reset_time_local = timezone.localtime(reset_time)
                     return Response(
                         {
@@ -164,21 +155,19 @@ class AgentChatView(APIView):
                         status=status.HTTP_403_FORBIDDEN,
                     )
         else:
-            # In local development (DJANGO_DEBUG=True) the free-message limit is
-            # skipped entirely so the developer can test without hitting it.
-            # It only applies once you deploy with DJANGO_DEBUG=False.
-            if not settings.DEBUG:
-                if not request.session.session_key:
-                    request.session.save()
-                count = request.session.get("anon_msg_count", 0)
-                if count >= FREE_ANON_MESSAGE_LIMIT:
-                    return Response(
-                        {
-                            "login_required": True,
-                            "detail": "Free message limit khatam ho gaya. Aage chalane ke liye login/signup karein.",
-                        },
-                        status=status.HTTP_403_FORBIDDEN,
-                    )
+            # Anonymous / Non-logged in Users Check
+            if not request.session.session_key:
+                request.session.save()
+            count = request.session.get("anon_msg_count", 0)
+            if count >= FREE_ANON_MESSAGE_LIMIT:
+                return Response(
+                    {
+                        "login_required": True,
+                        "upgrade_required": False,
+                        "detail": "Free message limit khatam ho gaya. Aage chalane ke liye login/signup karein.",
+                    },
+                    status=status.HTTP_403_FORBIDDEN,
+                )
 
         conv_id = data.get("conversation_id")
         if conv_id:
@@ -245,7 +234,6 @@ class UploadFileView(APIView):
         if not f:
             return Response({"error": "No file provided"}, status=status.HTTP_400_BAD_REQUEST)
 
-        # Basic guardrails: size limit + safe filename
         max_size_mb = 5
         if f.size > max_size_mb * 1024 * 1024:
             return Response({"error": f"File too big (max {max_size_mb}MB)"}, status=status.HTTP_400_BAD_REQUEST)
