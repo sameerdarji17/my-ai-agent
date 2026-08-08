@@ -46,10 +46,12 @@ def chat_page(request):
 
 
 def _send_verification_email(request, user):
-    """Safely attempts to send verification email without crashing the application."""
+    """Safely attempts to send verification email without crashing if SMTP fails."""
     try:
         uid = urlsafe_base64_encode(force_bytes(user.pk))
         token = default_token_generator.make_token(user)
+
+        # Fetch live Railway base URL
         site_url = getattr(settings, "SITE_BASE_URL", "https://sd-agent.up.railway.app").rstrip("/")
         verify_url = f"{site_url}/verify-email/{uid}/{token}/"
 
@@ -61,33 +63,41 @@ def _send_verification_email(request, user):
             ),
             from_email=settings.DEFAULT_FROM_EMAIL,
             recipient_list=[user.email],
-            fail_silently=True,
+            fail_silently=True,  # Prevents 500 error if email service is down
         )
     except Exception:
         pass
 
 
 def signup_view(request):
-    """Direct signup & auto-login to guarantee no 500 server crashes."""
+    """Handles signup and triggers the verification email process."""
+    success_msg = None
     if request.method == "POST":
         form = SignupForm(request.POST)
         if form.is_valid():
-            user = form.save(commit=False)
-            user.is_active = True  # Activate immediately so signup never blocks
-            user.save()
+            try:
+                user = form.save(commit=False)
+                user.is_active = False  # Set inactive until link click
+                user.save()
 
-            # Try sending background email safely
-            _send_verification_email(request, user)
+                # Send verification email safely in background
+                _send_verification_email(request, user)
 
-            # Auto-login and redirect directly to chat
-            auth_login(request, user)
-            return redirect("chat-page")
+                # Success message passed to templates/registration/signup.html
+                success_msg = f"Signup successful! We have sent a verification link to {user.email}. Please check your mail inbox, click the link, and log in."
+            except Exception as e:
+                form.add_error(None, f"Signup Error: {str(e)}")
     else:
         form = SignupForm()
-    return render(request, "registration/signup.html", {"form": form})
+
+    return render(request, "registration/signup.html", {
+        "form": form,
+        "success_msg": success_msg,
+    })
 
 
 def verify_email_view(request, uidb64, token):
+    """Handles verification link click from Gmail."""
     try:
         uid = force_str(urlsafe_base64_decode(uidb64))
         user = User.objects.get(pk=uid)
@@ -97,7 +107,7 @@ def verify_email_view(request, uidb64, token):
     if user is not None and default_token_generator.check_token(user, token):
         user.is_active = True
         user.save(update_fields=["is_active"])
-        auth_login(request, user)
+        auth_login(request, user)  # Auto-login on email link click
         return redirect("chat-page")
 
     return render(request, "registration/verify_failed.html")
@@ -195,6 +205,8 @@ class AgentChatView(APIView):
 
 
 class ConversationDetailView(APIView):
+    """GET /api/agent/conversations/<id>/ -- full history + tool trace."""
+
     def get(self, request, conversation_id):
         conversation = get_object_or_404(Conversation, id=conversation_id)
         serializer = ConversationSerializer(conversation)
@@ -202,6 +214,8 @@ class ConversationDetailView(APIView):
 
 
 class ConversationListView(APIView):
+    """GET /api/agent/conversations/ -- list this user's conversations."""
+
     def get(self, request):
         if request.user.is_authenticated:
             conversations = Conversation.objects.filter(owner=request.user)[:50]
@@ -214,6 +228,8 @@ class ConversationListView(APIView):
 
 
 class UploadFileView(APIView):
+    """POST /api/agent/upload/ -- saves uploaded file for read_file tool."""
+
     parser_classes = [MultiPartParser]
 
     def post(self, request):
@@ -235,6 +251,8 @@ class UploadFileView(APIView):
 
 
 class ShareConversationView(APIView):
+    """POST /api/agent/conversations/<id>/share/ -- creates public link."""
+
     def post(self, request, conversation_id):
         conversation = get_object_or_404(Conversation, id=conversation_id)
         conversation.is_shared = True
@@ -244,6 +262,7 @@ class ShareConversationView(APIView):
 
 
 def shared_conversation_view(request, conversation_id):
+    """Public read-only conversation view."""
     conversation = get_object_or_404(Conversation, id=conversation_id, is_shared=True)
     messages_out = []
     for m in conversation.messages.order_by("created_at"):
