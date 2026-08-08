@@ -1,4 +1,5 @@
 import os
+import threading
 
 from django.conf import settings
 from django.shortcuts import get_object_or_404, render, redirect
@@ -45,32 +46,46 @@ def chat_page(request):
     )
 
 
-def _send_verification_email(request, user):
-    """Safely attempts to send verification email without crashing if SMTP fails."""
+def _send_email_in_background(subject, message, recipient_email):
+    """Sends email in a separate background thread to prevent Gunicorn worker timeouts."""
     try:
-        uid = urlsafe_base64_encode(force_bytes(user.pk))
-        token = default_token_generator.make_token(user)
-
-        # Fetch live Railway base URL
-        site_url = getattr(settings, "SITE_BASE_URL", "https://sd-agent.up.railway.app").rstrip("/")
-        verify_url = f"{site_url}/verify-email/{uid}/{token}/"
-
         send_mail(
-            subject="Verify your email — SD AGENT",
-            message=(
-                f"Hi {user.first_name or user.username},\n\nPlease verify your email by clicking the link below:\n\n"
-                f"{verify_url}\n\nIf you didn't sign up, you can ignore this email."
-            ),
+            subject=subject,
+            message=message,
             from_email=settings.DEFAULT_FROM_EMAIL,
-            recipient_list=[user.email],
-            fail_silently=True,  # Prevents 500 error if email service is down
+            recipient_list=[recipient_email],
+            fail_silently=True,
         )
     except Exception:
         pass
 
 
+def _send_verification_email(request, user):
+    """Triggers verification email asynchronously without blocking the main HTTP request."""
+    try:
+        uid = urlsafe_base64_encode(force_bytes(user.pk))
+        token = default_token_generator.make_token(user)
+        site_url = getattr(settings, "SITE_BASE_URL", "https://sd-agent.up.railway.app").rstrip("/")
+        verify_url = f"{site_url}/verify-email/{uid}/{token}/"
+
+        subject = "Verify your email — SD AGENT"
+        message = (
+            f"Hi {user.first_name or user.username},\n\nPlease verify your email by clicking the link below:\n\n"
+            f"{verify_url}\n\nIf you didn't sign up, you can ignore this email."
+        )
+
+        # Execute in background thread so HTTP response returns instantly
+        thread = threading.Thread(
+            target=_send_email_in_background,
+            args=(subject, message, user.email)
+        )
+        thread.start()
+    except Exception:
+        pass
+
+
 def signup_view(request):
-    """Handles signup and triggers the verification email process."""
+    """Fast, crash-proof signup view that renders the email prompt box."""
     success_msg = None
     if request.method == "POST":
         form = SignupForm(request.POST)
@@ -80,13 +95,13 @@ def signup_view(request):
                 user.is_active = False  # Set inactive until link click
                 user.save()
 
-                # Send verification email safely in background
+                # Trigger async verification email
                 _send_verification_email(request, user)
 
-                # Success message passed to templates/registration/signup.html
-                success_msg = f"Signup successful! We have sent a verification link to {user.email}. Please check your mail inbox, click the link, and log in."
+                # Message displayed in signup.html
+                success_msg = f"Account created successfully! We sent a verification link to {user.email}. Please check your inbox and click the link to login."
             except Exception as e:
-                form.add_error(None, f"Signup Error: {str(e)}")
+                form.add_error(None, f"Error: {str(e)}")
     else:
         form = SignupForm()
 
