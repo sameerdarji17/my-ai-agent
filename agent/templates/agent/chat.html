@@ -127,7 +127,7 @@
   .msg-action-btn:hover { background: var(--hover); color: var(--text); }
   .msg-time { font-family: var(--font-mono); font-size: 10.5px; color: var(--text-dim); }
 
-  .bubble { padding: 12px 16px; border-radius: 14px; line-height: 1.55; font-size: 14.5px; white-space: pre-wrap; }
+  .bubble { padding: 12px 16px; border-radius: 14px; line-height: 1.55; font-size: 14.5px; white-space: pre-wrap; word-break: break-word; }
   .bubble a { color: var(--accent); text-decoration: underline; word-break: break-word; }
   .bubble strong { font-weight: 600; }
   .bubble table.md-table {
@@ -151,7 +151,7 @@
   .typing span:nth-child(3) { animation-delay: 0.3s; }
   @keyframes bounce { 0%, 60%, 100% { transform: translateY(0); opacity: 0.4; } 30% { transform: translateY(-5px); opacity: 1; } }
 
-  /* ---------- Input bar (shared between hero + bottom-docked states) ---------- */
+  /* ---------- Input bar ---------- */
   #input-bar { flex-shrink: 0; padding: 12px 20px 20px 20px; display: none; justify-content: center; }
   #input-form { width: 100%; max-width: 720px; display: flex; flex-direction: column; gap: 6px; position: relative; }
   #pending-attachment { display: none; }
@@ -231,16 +231,95 @@
   ::-webkit-scrollbar { width: 8px; }
   ::-webkit-scrollbar-thumb { background: var(--panel-border); border-radius: 8px; }
 
-  @media (max-width: 720px) {
-    #sidebar { position: fixed; z-index: 50; height: 100vh; }
-    #sidebar.collapsed { width: 0; }
+  /* ==========================================================================
+     FULL RESPONSIVE DESIGN (Phones, Tablets, Laptops)
+     ========================================================================== */
+
+  /* 1. Mobile Devices (Phones - Screen width up to 768px) */
+  @media (max-width: 768px) {
+    #sidebar {
+      position: fixed;
+      top: 0;
+      left: 0;
+      height: 100vh;
+      z-index: 100;
+      width: 280px;
+      box-shadow: 4px 0 25px rgba(0,0,0,0.5);
+    }
+    #sidebar.collapsed {
+      width: 0;
+      box-shadow: none;
+    }
+
+    header {
+      padding: 10px 14px;
+    }
+    header .sub {
+      display: none; /* Hide subtitle on small screens */
+    }
+
+    #hero-wrap {
+      padding: 16px;
+      gap: 18px;
+    }
+    #hero-greeting h2 {
+      font-size: 24px;
+    }
+    #hero-greeting .glyph {
+      font-size: 26px;
+    }
+    #hero-greeting .rotating-sub {
+      font-size: 13px;
+    }
+    .logo-mark.large {
+      width: 48px;
+      height: 48px;
+    }
+
+    .thread {
+      padding: 0 12px;
+    }
+    .row {
+      max-width: 95%;
+    }
+    .bubble {
+      font-size: 14px;
+      padding: 10px 12px;
+    }
+
+    #input-bar {
+      padding: 8px 12px 14px 12px;
+    }
+    #input-row {
+      padding: 6px 6px 6px 4px;
+    }
+    #message-input {
+      font-size: 15px; /* Prevents auto-zoom on mobile iOS/Android */
+    }
+    #send-btn {
+      padding: 0 12px;
+      font-size: 12px;
+    }
+  }
+
+  /* 2. Tablets & Small Laptops (Width 769px to 1024px) */
+  @media (min-width: 769px) and (max-width: 1024px) {
+    #sidebar {
+      width: 220px;
+    }
+    .thread {
+      max-width: 90%;
+    }
+    #hero-input-container, #input-form {
+      max-width: 90%;
+    }
   }
 </style>
 </head>
 <body>
 {% csrf_token %}
 
-<div id="sidebar">
+<div id="sidebar" class="collapsed">
   <div class="brand">
     <div class="logo-mark"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" rx="24" fill="#101118"/><path d="M44 32C34 32 29 36 29 42C29 47 35 49 39 50C44 51 50 52 50 58C50 64 44 68 33 68" fill="none" stroke="#9BA1FF" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/><path d="M47 31L47 69M47 31C64 31 73 40 73 50C73 60 64 69 47 69" fill="none" stroke="#7C83FD" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
     <h1>{{ agent_name|default:"My Agent" }}</h1>
@@ -424,7 +503,7 @@
   let conversationId = null;
   let pendingFilename = null;
   let inConversationMode = false;
-  let liveInputNode = null; // the ONE input form, created once, moved between containers
+  let liveInputNode = null;
   let pendingAttachmentEl = null;
   let attachChipTextEl = null;
 
@@ -441,7 +520,7 @@
       liveInputNode = container.querySelector('#input-form');
       wireInputEvents(liveInputNode);
     } else {
-      container.appendChild(liveInputNode); // just moves the SAME node — preserves its state
+      container.appendChild(liveInputNode);
     }
   }
 
@@ -461,8 +540,8 @@
     chatWindow.style.display = 'none';
     bottomBar.style.display = 'none';
     mountInput(heroContainer);
-    thread.innerHTML = ''; // CRITICAL: clear old messages so New Chat doesn't mix with previous conversation
-    clearPendingAttachment(); // starting a new chat should also drop any pending file
+    thread.innerHTML = '';
+    clearPendingAttachment();
   }
 
   const TOOL_LABELS = { web_search: '🔍 web_search', read_file: '📄 read_file', list_files: '🗂 list_files', execute_code: '⚙ execute_code', generate_image: '🎨 generate_image' };
@@ -471,7 +550,6 @@
 
   const IMAGE_URL_REGEX = /(https?:\/\/image\.pollinations\.ai\/prompt\/[^\s)]+|https?:\/\/\S+\.(?:png|jpg|jpeg|gif|webp)(?:\?\S+)?)/gi;
 
-  // ---------- Lightweight, safe markdown renderer for chat bubbles ----------
   function escapeHtml(s) {
     return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
   }
@@ -510,7 +588,6 @@
     let html = escapeHtml(text);
     html = convertMarkdownTables(html);
     html = html.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
-    // Handles markdown links [text](url), angle-bracket <url>, and bare URLs — in one pass so a URL is never linked twice
     html = html.replace(
       /\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)|&lt;(https?:\/\/[^\s&]+)&gt;|(https?:\/\/[^\s<>"]+)/g,
       (match, mdText, mdUrl, angleUrl, bareUrl) => {
@@ -561,8 +638,6 @@
     const row = document.createElement('div');
     row.className = 'row assistant';
     const time = formatTime(new Date());
-    // Tool-use badges intentionally not shown to keep the chat clean —
-    // internal tool calls are an implementation detail, not user-facing.
     row.innerHTML = `
       <div class="bubble" title="${time}"></div>
       <div class="msg-actions">
@@ -583,7 +658,7 @@
           await navigator.clipboard.writeText(rawText);
           copyBtn.textContent = '✓';
           setTimeout(() => { copyBtn.textContent = '⧉'; }, 1200);
-        } catch (err) { /* clipboard may be unavailable, fail silently */ }
+        } catch (err) {}
       });
     }
     const editBtn = row.querySelector('.edit-btn');
@@ -639,7 +714,7 @@
       const data = await resp.json();
       allConversations = data;
       renderHistoryList(chatSearchInput ? chatSearchInput.value : '');
-    } catch (err) { /* silent */ }
+    } catch (err) {}
   }
 
   function renderHistoryList(filterText) {
@@ -677,7 +752,7 @@
           if (text) addAssistantBubble(text, []);
         }
       });
-    } catch (err) { /* silent */ }
+    } catch (err) {}
     loadHistoryList();
   }
 
@@ -687,9 +762,9 @@
     loadHistoryList();
   });
 
-  // ---------- Wire up a mounted input (hero or bottom) ----------
+  // ---------- Wire up input events ----------
   function wireInputEvents(container) {
-    const form = container; // container is now the <form id="input-form"> itself
+    const form = container;
     const input = container.querySelector('#message-input');
     const sendBtn = container.querySelector('#send-btn');
     const attachBtn = container.querySelector('#attach-btn');
@@ -704,7 +779,6 @@
     const micBtn = container.querySelector('#mic-btn');
     const styleSelector = container.querySelector('#style-selector');
 
-    // Restore last-used style choice
     if (styleSelector) {
       styleSelector.value = window.__myagentStyle || 'normal';
       styleSelector.addEventListener('change', () => {
@@ -712,7 +786,6 @@
       });
     }
 
-    // ---------- Voice input (Web Speech API — Chrome/Edge only) ----------
     if (micBtn) {
       const SpeechRecognitionAPI = window.SpeechRecognition || window.webkitSpeechRecognition;
       if (!SpeechRecognitionAPI) {
@@ -812,7 +885,6 @@
       addUserBubble(displayText);
       clearPendingAttachment();
 
-      // re-grab bottom input refs since we may have just mounted it fresh
       const activeInput = document.getElementById('message-input');
       const activeSendBtn = document.getElementById('send-btn');
       if (activeInput) { activeInput.value = ''; activeInput.style.height = 'auto'; }
