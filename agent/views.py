@@ -48,11 +48,15 @@ def chat_page(request):
 def _send_verification_email(request, user):
     uid = urlsafe_base64_encode(force_bytes(user.pk))
     token = default_token_generator.make_token(user)
-    verify_url = f"{settings.SITE_BASE_URL}/verify-email/{uid}/{token}/"
+
+    # 1. Dynamic Live Railway Base URL fetch logic
+    site_url = getattr(settings, "SITE_BASE_URL", "https://sd-agent.up.railway.app").rstrip("/")
+    verify_url = f"{site_url}/verify-email/{uid}/{token}/"
+
     send_mail(
-        subject="Verify your email — My Agent",
+        subject="Verify your email — SD AGENT",
         message=(
-            f"Hi {user.first_name or ''},\n\nPlease verify your email by clicking the link below:\n\n"
+            f"Hi {user.first_name or user.username},\n\nPlease verify your email by clicking the link below:\n\n"
             f"{verify_url}\n\nIf you didn't sign up, you can ignore this email."
         ),
         from_email=settings.DEFAULT_FROM_EMAIL,
@@ -63,9 +67,9 @@ def _send_verification_email(request, user):
 
 def _send_welcome_email(user):
     send_mail(
-        subject="Welcome to My Agent 🎉",
+        subject="Welcome to SD AGENT 🎉",
         message=(
-            f"Hi {user.first_name or user.email},\n\n"
+            f"Hi {user.first_name or user.username},\n\n"
             "Your email is verified and your account is ready to go!\n\n"
             "You can now chat with your AI agent, search the web, upload "
             "files, and more — right from your account.\n\n"
@@ -81,7 +85,9 @@ def signup_view(request):
     if request.method == "POST":
         form = SignupForm(request.POST)
         if form.is_valid():
-            user = form.save()
+            user = form.save(commit=False)
+            user.is_active = False  # Set inactive until email link is clicked
+            user.save()
             _send_verification_email(request, user)
             return render(request, "registration/signup_done.html", {"email": user.email})
     else:
@@ -99,7 +105,7 @@ def verify_email_view(request, uidb64, token):
     if user is not None and default_token_generator.check_token(user, token):
         user.is_active = True
         user.save(update_fields=["is_active"])
-        _send_welcome_email(user)
+        _send_welcome_email(user)  # Auto-send Welcome Email on successful verification
         auth_login(request, user)
         return redirect("chat-page")
 
