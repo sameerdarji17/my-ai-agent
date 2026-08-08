@@ -18,6 +18,18 @@ SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY", "dev-only-change-this-in-produc
 DEBUG = os.environ.get("DJANGO_DEBUG", "True") == "True"
 ALLOWED_HOSTS = os.environ.get("DJANGO_ALLOWED_HOSTS", "*").split(",")
 
+# Fix 1: CSRF Trusted Origins for Railway Deployment (Fixes 403 Forbidden Error on Signup/Login)
+CSRF_TRUSTED_ORIGINS = [
+    "https://sd-agent.up.railway.app",
+    "https://*.up.railway.app",
+    "http://localhost:8000",
+    "http://127.0.0.1:8000",
+]
+
+env_csrf = os.environ.get("CSRF_TRUSTED_ORIGINS")
+if env_csrf:
+    CSRF_TRUSTED_ORIGINS.extend([origin.strip() for origin in env_csrf.split(",") if origin.strip()])
+
 # ---------------------------------------------------------------------------
 # APPS
 # ---------------------------------------------------------------------------
@@ -68,8 +80,6 @@ ASGI_APPLICATION = "myagent_project.asgi.application"
 # ---------------------------------------------------------------------------
 # DATABASE
 # ---------------------------------------------------------------------------
-# Uses DATABASE_URL if set and non-empty (Railway/Render auto-inject this
-# when you add a Postgres addon) — falls back to local SQLite otherwise.
 _database_url = os.environ.get("DATABASE_URL", "").strip()
 if _database_url:
     DATABASES = {"default": dj_database_url.parse(_database_url, conn_max_age=600)}
@@ -112,51 +122,36 @@ REST_FRAMEWORK = {
 }
 
 # ---------------------------------------------------------------------------
-# AGENT / LLM CONFIG  (values come from environment variables — see .env.example)
+# AGENT / LLM CONFIG
 # ---------------------------------------------------------------------------
-# Groq is the default provider: it has a generous free tier, is OpenAI-API
-# compatible, and needs no billing setup. Get a free key at console.groq.com
 GROQ_API_KEY = os.environ.get("GROQ_API_KEY", "")
-GROQ_MODEL = os.environ.get("GROQ_MODEL", "openai/gpt-oss-20b")
+
+# Fix 2: Updated to the correct active Groq model
+GROQ_MODEL = os.environ.get("GROQ_MODEL", "llama-3.3-70b-versatile")
 GROQ_BASE_URL = "https://api.groq.com/openai/v1"
 
-# Optional: switch to Anthropic (paid) instead by setting LLM_PROVIDER=anthropic
-LLM_PROVIDER = os.environ.get("LLM_PROVIDER", "groq")  # "groq" or "anthropic"
+LLM_PROVIDER = os.environ.get("LLM_PROVIDER", "groq")
 ANTHROPIC_API_KEY = os.environ.get("ANTHROPIC_API_KEY", "")
-ANTHROPIC_MODEL = os.environ.get("ANTHROPIC_MODEL", "claude-sonnet-4-6")
+ANTHROPIC_MODEL = os.environ.get("ANTHROPIC_MODEL", "claude-3-5-sonnet-20241022")
 
-TAVILY_API_KEY = os.environ.get("TAVILY_API_KEY", "")  # web search provider
-
-# OCR.space — free API for reading text from uploaded images (e.g. error
-# screenshots). "helloworld" is OCR.space's shared public demo key with low
-# limits — get your own free key (25,000/month) at https://ocr.space/ocrapi
+TAVILY_API_KEY = os.environ.get("TAVILY_API_KEY", "")
 OCR_SPACE_API_KEY = os.environ.get("OCR_SPACE_API_KEY", "")
 
-# Directory where uploaded / readable files for the "read_file" tool must live.
-# The tool refuses to read anything outside this directory (path-traversal guard).
 AGENT_FILES_ROOT = BASE_DIR / "agent_files"
 AGENT_FILES_ROOT.mkdir(exist_ok=True)
 
-# Directory used as a scratch space for the code-execution tool.
 SANDBOX_RUNS_ROOT = BASE_DIR / "sandbox_runs"
 SANDBOX_RUNS_ROOT.mkdir(exist_ok=True)
 
-# Hard limits for the code-execution tool (see agent/tools.py for details)
 CODE_EXEC_TIMEOUT_SECONDS = int(os.environ.get("CODE_EXEC_TIMEOUT_SECONDS", "8"))
 CODE_EXEC_MAX_OUTPUT_CHARS = 4000
 
 MAX_AGENT_TURNS = int(os.environ.get("MAX_AGENT_TURNS", "10"))
-# How many recent messages to send to the LLM per request — keeps token
-# usage bounded on long conversations (important for free-tier rate limits).
 MAX_HISTORY_MESSAGES = int(os.environ.get("MAX_HISTORY_MESSAGES", "8"))
 
 # ---------------------------------------------------------------------------
-# EMAIL (used for real signup verification links)
+# EMAIL
 # ---------------------------------------------------------------------------
-# If EMAIL_HOST is not set, emails print to the terminal (console backend) —
-# handy for local testing without needing a real mailbox. Set EMAIL_HOST etc.
-# in .env to send real emails (e.g. Gmail app password, or a free service
-# like Brevo/SendGrid/Mailgun).
 if os.environ.get("EMAIL_HOST"):
     EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
     EMAIL_HOST = os.environ.get("EMAIL_HOST")
@@ -168,7 +163,7 @@ else:
     EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
 
 DEFAULT_FROM_EMAIL = os.environ.get("DEFAULT_FROM_EMAIL", "SD AGENT <no-reply@myagent.local>")
-SITE_BASE_URL = os.environ.get("SITE_BASE_URL", "http://localhost:8000")
+SITE_BASE_URL = os.environ.get("SITE_BASE_URL", "https://sd-agent.up.railway.app")
 
 # ---------------------------------------------------------------------------
 # AUTH
@@ -178,7 +173,7 @@ LOGIN_REDIRECT_URL = "chat-page"
 LOGOUT_REDIRECT_URL = "chat-page"
 
 # ---------------------------------------------------------------------------
-# RAZORPAY (billing app) — get keys at https://dashboard.razorpay.com/app/keys
+# RAZORPAY
 # ---------------------------------------------------------------------------
 RAZORPAY_KEY_ID = os.environ.get("RAZORPAY_KEY_ID", "")
 RAZORPAY_KEY_SECRET = os.environ.get("RAZORPAY_KEY_SECRET", "")
