@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Plans — Upgrade</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+<style>
+  :root {
+    --bg: #0D0E12; --panel: #16171D; --panel-border: #24262E;
+    --text: #EDEAE2; --text-dim: #8B8D97; --accent: #7C83FD;
+    --font-display: 'Space Grotesk', sans-serif; --font-body: 'IBM Plex Sans', sans-serif;
+  }
+  [data-theme="light"] {
+    --bg: #FAFAF9; --panel: #FFFFFF; --panel-border: #E5E4E0;
+    --text: #1C1C1E; --text-dim: #7A7A82; --accent: #635BFF;
+  }
+  * { box-sizing: border-box; }
+  body {
+    transition: background 0.2s ease, color 0.2s ease;
+    margin: 0; background: var(--bg); color: var(--text); font-family: var(--font-body);
+    min-height: 100vh; display: flex; flex-direction: column; align-items: center; padding: 60px 20px;
+  }
+  a.back { align-self: flex-start; color: var(--text-dim); text-decoration: none; font-size: 14px; margin-bottom: 24px; }
+  h1 { font-family: var(--font-display); font-size: 30px; margin: 0 0 6px 0; }
+  p.sub { color: var(--text-dim); margin: 0 0 40px 0; }
+  .plans { display: flex; gap: 20px; flex-wrap: wrap; justify-content: center; max-width: 720px; }
+  .card {
+    background: var(--panel); border: 1px solid var(--panel-border); border-radius: 16px;
+    padding: 28px; width: 260px; display: flex; flex-direction: column;
+  }
+  .card.highlighted { border-color: var(--accent); box-shadow: 0 0 30px rgba(124,131,253,0.15); }
+  .plan-name { font-family: var(--font-display); font-size: 20px; margin-bottom: 4px; }
+  .price { font-family: var(--font-display); font-size: 32px; margin: 12px 0; }
+  .price span { font-size: 14px; color: var(--text-dim); font-family: var(--font-body); }
+  ul { padding-left: 18px; margin: 16px 0; color: var(--text-dim); font-size: 13.5px; line-height: 1.8; }
+  button, .btn {
+    margin-top: auto; background: var(--accent); color: #0D0E12; border: none; border-radius: 10px;
+    padding: 12px; font-family: var(--font-display); font-weight: 600; font-size: 14px; cursor: pointer;
+    text-align: center; text-decoration: none;
+  }
+  button:disabled { background: var(--panel-border); color: var(--text-dim); cursor: not-allowed; }
+  .current-badge {
+    font-size: 11px; color: var(--accent); border: 1px solid var(--accent); border-radius: 20px;
+    padding: 2px 10px; display: inline-block; margin-bottom: 10px; width: fit-content;
+  }
+  #status-msg { margin-top: 20px; font-size: 13px; color: var(--text-dim); }
+</style>
+</head>
+<body>
+<script>document.documentElement.setAttribute('data-theme', localStorage.getItem('myagent_theme') || 'light');</script>
+
+<a class="back" href="/">&larr; Back to chat</a>
+<h1>Choose your plan</h1>
+<p class="sub">Free covers the basics — Premium gives you unlimited search and image generation.</p>
+
+<div class="plans">
+  <div class="card">
+    <span class="current-badge" style="{% if subscription.plan == 'free' %}display:block{% else %}display:none{% endif %}">Current Plan</span>
+    <div class="plan-name">Free</div>
+    <div class="price">₹0 <span>/ forever</span></div>
+    <ul>
+      <li>8 messages every 5 hours</li>
+      <li>web_search, read_file, execute_code tools</li>
+      <li>Chat history is saved</li>
+    </ul>
+    <button disabled>You're on this plan</button>
+  </div>
+
+  <div class="card highlighted">
+    <span class="current-badge" style="{% if subscription.is_premium %}display:block{% else %}display:none{% endif %}">Current Plan</span>
+    <div class="plan-name">Premium</div>
+    <div class="price">{{ price_display }} <span>/ 3 months</span></div>
+    <ul>
+      <li>Unlimited messages &amp; search</li>
+      <li>AI image generation</li>
+      <li>Faster response priority</li>
+      <li>Larger file upload size</li>
+    </ul>
+    {% if subscription.is_premium %}
+      <button disabled>Active until {{ subscription.period_end|date:"d M Y" }} ✓</button>
+    {% elif razorpay_configured %}
+      <button id="upgrade-btn">Upgrade now</button>
+    {% else %}
+      <button disabled title="Add Razorpay keys in .env">Not available yet</button>
+    {% endif %}
+  </div>
+</div>
+
+<div id="status-msg"></div>
+
+<script>
+  const btn = document.getElementById('upgrade-btn');
+  const statusMsg = document.getElementById('status-msg');
+
+  function getCookie(name) {
+    const value = `; ${document.cookie}`;
+    const parts = value.split(`; ${name}=`);
+    if (parts.length === 2) return parts.pop().split(';').shift();
+  }
+
+  if (btn) {
+    btn.addEventListener('click', async () => {
+      btn.disabled = true;
+      statusMsg.textContent = 'Creating order…';
+      try {
+        const resp = await fetch('/billing/create-order/', {
+          method: 'POST',
+          headers: { 'X-CSRFToken': getCookie('csrftoken') },
+        });
+        const order = await resp.json();
+        if (!resp.ok) {
+          statusMsg.textContent = 'Error: ' + (order.error || 'something went wrong');
+          btn.disabled = false;
+          return;
+        }
+
+        const rzp = new Razorpay({
+          key: order.key_id,
+          amount: order.amount,
+          currency: order.currency,
+          order_id: order.order_id,
+          name: 'My Agent — Premium',
+          description: 'Premium plan (3 months)',
+          theme: { color: '#7C83FD' },
+          handler: async function (response) {
+            statusMsg.textContent = 'Verifying payment…';
+            const verifyResp = await fetch('/billing/verify-payment/', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrftoken') },
+              body: JSON.stringify({
+                razorpay_order_id: response.razorpay_order_id,
+                razorpay_payment_id: response.razorpay_payment_id,
+                razorpay_signature: response.razorpay_signature,
+              }),
+            });
+            const verifyData = await verifyResp.json();
+            if (verifyResp.ok && verifyData.success) {
+              statusMsg.textContent = "You're on Premium now 🎉";
+              setTimeout(() => location.reload(), 1200);
+            } else {
+              statusMsg.textContent = 'Verification failed: ' + (verifyData.error || '');
+              btn.disabled = false;
+            }
+          },
+          modal: { ondismiss: function () { btn.disabled = false; statusMsg.textContent = ''; } },
+        });
+        rzp.open();
+      } catch (err) {
+        statusMsg.textContent = 'Network error: ' + err.message;
+        btn.disabled = false;
+      }
+    });
+  }
+</script>
+
+</body>
+</html>

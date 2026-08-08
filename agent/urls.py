@@ -1,0 +1,10 @@
+from django.urls import path
+from . import views
+
+urlpatterns = [
+    path("chat/", views.AgentChatView.as_view(), name="agent-chat"),
+    path("upload/", views.UploadFileView.as_view(), name="agent-upload"),
+    path("conversations/", views.ConversationListView.as_view(), name="conversation-list"),
+    path("conversations/<uuid:conversation_id>/", views.ConversationDetailView.as_view(), name="conversation-detail"),
+    path("conversations/<uuid:conversation_id>/share/", views.ShareConversationView.as_view(), name="conversation-share"),
+]

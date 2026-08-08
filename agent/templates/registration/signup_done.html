@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Check your email</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@600;700&family=IBM+Plex+Sans:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root { --bg:#0D0E12; --panel:#16171D; --border:#24262E; --text:#EDEAE2; --dim:#8B8D97; --accent:#7C83FD; }
+  [data-theme="light"] { --bg:#FAFAF9; --panel:#FFFFFF; --border:#E5E4E0; --text:#1C1C1E; --dim:#7A7A82; --accent:#635BFF; }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--bg); color:var(--text); font-family:'IBM Plex Sans',sans-serif;
+    height:100vh; display:flex; align-items:center; justify-content:center; transition:background 0.2s ease, color 0.2s ease; }
+  .card { background:var(--panel); border:1px solid var(--border); border-radius:16px; padding:36px;
+    width:360px; text-align:center; }
+  .glyph { font-size:34px; color:var(--accent); margin-bottom:10px; }
+  h1 { font-family:'Space Grotesk',sans-serif; font-size:20px; margin:0 0 10px 0; }
+  p { color:var(--dim); font-size:13.5px; margin:0 0 4px 0; }
+  strong { color: var(--text); }
+  a { color:var(--accent); text-decoration:none; }
+</style>
+</head>
+<body>
+  <div class="card">
+    <div class="glyph">📧</div>
+    <h1>Check your email</h1>
+    <p>We've sent a verification link to <strong>{{ email }}</strong>.</p>
+    <p>Click the link in that email to activate your account and log in.</p>
+    <p style="margin-top:18px;"><a href="/login/">Back to login</a></p>
+  </div>
+  <script>
+    document.documentElement.setAttribute('data-theme', localStorage.getItem('myagent_theme') || 'light');
+  </script>
+</body>
+</html>

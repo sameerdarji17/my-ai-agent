@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Login</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@600;700&family=IBM+Plex+Sans:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root { --bg:#0D0E12; --panel:#16171D; --border:#24262E; --text:#EDEAE2; --dim:#8B8D97; --accent:#7C83FD; }
+  [data-theme="light"] { --bg:#FAFAF9; --panel:#FFFFFF; --border:#E5E4E0; --text:#1C1C1E; --dim:#7A7A82; --accent:#635BFF; }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--bg); color:var(--text); font-family:'IBM Plex Sans',sans-serif;
+    min-height:100vh; display:flex; flex-direction:column; align-items:center; justify-content:center;
+    transition:background 0.2s ease, color 0.2s ease; padding:20px; }
+  .top-bar { width:340px; display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; }
+  .back-link { color:var(--dim); text-decoration:none; font-size:13px; }
+  .back-link:hover { color:var(--text); }
+  .theme-toggle-btn { background:transparent; border:1px solid var(--border); color:var(--text); border-radius:8px;
+    padding:5px 9px; cursor:pointer; font-size:13px; }
+  .card { background:var(--panel); border:1px solid var(--border); border-radius:16px; padding:36px;
+    width:340px; }
+  h1 { font-family:'Space Grotesk',sans-serif; font-size:22px; margin:0 0 22px 0; }
+  label { font-size:12px; color:var(--dim); display:block; margin-bottom:6px; }
+  input { width:100%; background:var(--bg); border:1px solid var(--border); border-radius:8px; color:var(--text);
+    padding:10px 12px; font-size:14px; margin-bottom:16px; }
+  input:focus { outline:none; border-color:var(--accent); }
+  button[type="submit"] { width:100%; background:var(--accent); color:#fff; border:none; border-radius:10px; padding:12px;
+    font-family:'Space Grotesk',sans-serif; font-weight:600; cursor:pointer; }
+  .errorlist { color:#FF7A7A; font-size:12px; list-style:none; padding:0; margin:-10px 0 14px 0; }
+  .foot { text-align:center; margin-top:18px; font-size:13px; color:var(--dim); }
+  .foot a { color:var(--accent); text-decoration:none; }
+</style>
+</head>
+<body>
+  <div class="top-bar">
+    <a class="back-link" href="/">&larr; Back to chat</a>
+    <button class="theme-toggle-btn" id="theme-toggle-btn">🌙</button>
+  </div>
+  <div class="card">
+    <h1>Log in</h1>
+    <form method="post">
+      {% csrf_token %}
+      {% if form.non_field_errors %}
+        <ul class="errorlist">{% for e in form.non_field_errors %}<li>{{ e }}</li>{% endfor %}</ul>
+      {% endif %}
+      <label>Email / Username</label>
+      <input type="text" name="username" required autofocus>
+      <label>Password</label>
+      <input type="password" name="password" required>
+      <button type="submit">Log in</button>
+    </form>
+    <div class="foot">Don't have an account? <a href="/signup/">Sign up</a></div>
+  </div>
+  <script>
+    const THEME_KEY = 'myagent_theme';
+    const btn = document.getElementById('theme-toggle-btn');
+    function applyTheme(t) {
+      document.documentElement.setAttribute('data-theme', t);
+      btn.textContent = t === 'light' ? '☀️' : '🌙';
+      localStorage.setItem(THEME_KEY, t);
+    }
+    applyTheme(localStorage.getItem(THEME_KEY) || 'light');
+    btn.addEventListener('click', () => {
+      applyTheme(document.documentElement.getAttribute('data-theme') === 'light' ? 'dark' : 'light');
+    });
+  </script>
+</body>
+</html>
