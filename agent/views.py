@@ -85,21 +85,22 @@ def _send_verification_email(request, user):
 
 
 def signup_view(request):
-    """Fast, crash-proof signup view that renders the email prompt box."""
+    """Instant-activation signup view to prevent login block and timeout errors."""
     success_msg = None
     if request.method == "POST":
         form = SignupForm(request.POST)
         if form.is_valid():
             try:
                 user = form.save(commit=False)
-                user.is_active = False  # Set inactive until link click
+                user.is_active = True  # Immediately active so login never blocks
                 user.save()
 
-                # Trigger async verification email
+                # Send verification email in background
                 _send_verification_email(request, user)
 
-                # Message displayed in signup.html
-                success_msg = f"Account created successfully! We sent a verification link to {user.email}. Please check your inbox and click the link to login."
+                # Auto login immediately
+                auth_login(request, user)
+                return redirect("chat-page")
             except Exception as e:
                 form.add_error(None, f"Error: {str(e)}")
     else:
