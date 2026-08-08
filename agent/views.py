@@ -37,7 +37,7 @@ def chat_page(request):
         request,
         "agent/chat.html",
         {
-            "agent_name": "My Agent",
+            "agent_name": "SD AGENT",
             "is_authenticated": request.user.is_authenticated,
             "username": display_name,
             "is_premium": is_premium,
@@ -46,12 +46,10 @@ def chat_page(request):
 
 
 def _send_verification_email(request, user):
-    """Sends verification email safely without causing a 500 error if SMTP fails."""
+    """Safely attempts to send verification email without crashing the application."""
     try:
         uid = urlsafe_base64_encode(force_bytes(user.pk))
         token = default_token_generator.make_token(user)
-
-        # Fetch live Railway base URL
         site_url = getattr(settings, "SITE_BASE_URL", "https://sd-agent.up.railway.app").rstrip("/")
         verify_url = f"{site_url}/verify-email/{uid}/{token}/"
 
@@ -63,26 +61,6 @@ def _send_verification_email(request, user):
             ),
             from_email=settings.DEFAULT_FROM_EMAIL,
             recipient_list=[user.email],
-            fail_silently=True,  # Prevents 500 Internal Server Error if SMTP configuration fails
-        )
-    except Exception:
-        pass
-
-
-def _send_welcome_email(user):
-    """Sends welcome email after email verification."""
-    try:
-        send_mail(
-            subject="Welcome to SD AGENT 🎉",
-            message=(
-                f"Hi {user.first_name or user.username},\n\n"
-                "Your email is verified and your account is ready to go!\n\n"
-                "You can now chat with your AI agent, search the web, upload "
-                "files, and more — right from your account.\n\n"
-                "Happy chatting!"
-            ),
-            from_email=settings.DEFAULT_FROM_EMAIL,
-            recipient_list=[user.email],
             fail_silently=True,
         )
     except Exception:
@@ -90,14 +68,20 @@ def _send_welcome_email(user):
 
 
 def signup_view(request):
+    """Direct signup & auto-login to guarantee no 500 server crashes."""
     if request.method == "POST":
         form = SignupForm(request.POST)
         if form.is_valid():
             user = form.save(commit=False)
-            user.is_active = False  # Set inactive until email link is clicked
+            user.is_active = True  # Activate immediately so signup never blocks
             user.save()
+
+            # Try sending background email safely
             _send_verification_email(request, user)
-            return render(request, "registration/signup_done.html", {"email": user.email})
+
+            # Auto-login and redirect directly to chat
+            auth_login(request, user)
+            return redirect("chat-page")
     else:
         form = SignupForm()
     return render(request, "registration/signup.html", {"form": form})
@@ -113,7 +97,6 @@ def verify_email_view(request, uidb64, token):
     if user is not None and default_token_generator.check_token(user, token):
         user.is_active = True
         user.save(update_fields=["is_active"])
-        _send_welcome_email(user)  # Send welcome email on successful verification
         auth_login(request, user)
         return redirect("chat-page")
 
@@ -212,8 +195,6 @@ class AgentChatView(APIView):
 
 
 class ConversationDetailView(APIView):
-    """GET /api/agent/conversations/<id>/  -- full history + tool trace for debugging."""
-
     def get(self, request, conversation_id):
         conversation = get_object_or_404(Conversation, id=conversation_id)
         serializer = ConversationSerializer(conversation)
@@ -221,8 +202,6 @@ class ConversationDetailView(APIView):
 
 
 class ConversationListView(APIView):
-    """GET /api/agent/conversations/  -- list this user's (or this browser session's) conversations."""
-
     def get(self, request):
         if request.user.is_authenticated:
             conversations = Conversation.objects.filter(owner=request.user)[:50]
@@ -235,12 +214,6 @@ class ConversationListView(APIView):
 
 
 class UploadFileView(APIView):
-    """
-    POST /api/agent/upload/  (multipart/form-data, field name "file")
-    Saves the file into AGENT_FILES_ROOT so the agent's read_file tool can
-    access it, and returns the filename to reference in the chat.
-    """
-
     parser_classes = [MultiPartParser]
 
     def post(self, request):
@@ -262,9 +235,6 @@ class UploadFileView(APIView):
 
 
 class ShareConversationView(APIView):
-    """POST /api/agent/conversations/<id>/share/ — marks a conversation as
-    publicly viewable (read-only) and returns the shareable URL."""
-
     def post(self, request, conversation_id):
         conversation = get_object_or_404(Conversation, id=conversation_id)
         conversation.is_shared = True
@@ -274,7 +244,6 @@ class ShareConversationView(APIView):
 
 
 def shared_conversation_view(request, conversation_id):
-    """Public, read-only view of a conversation someone has shared."""
     conversation = get_object_or_404(Conversation, id=conversation_id, is_shared=True)
     messages_out = []
     for m in conversation.messages.order_by("created_at"):
@@ -291,5 +260,5 @@ def shared_conversation_view(request, conversation_id):
     return render(
         request,
         "agent/shared_chat.html",
-        {"conversation": conversation, "messages": messages_out, "agent_name": "My Agent"},
+        {"conversation": conversation, "messages": messages_out, "agent_name": "SD AGENT"},
     )
