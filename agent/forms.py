@@ -1,28 +1,46 @@
 from django import forms
-from django.contrib.auth.forms import UserCreationForm
+from django.contrib.auth import authenticate
 from django.contrib.auth.models import User
+from django.contrib.auth.forms import UserCreationForm
 
 
 class SignupForm(UserCreationForm):
-    full_name = forms.CharField(label="Name", max_length=150, required=True)
     email = forms.EmailField(required=True)
 
     class Meta:
         model = User
-        fields = ["full_name", "email", "password1", "password2"]
+        fields = ("username", "email", "first_name", "last_name")
 
     def clean_email(self):
-        email = self.cleaned_data["email"]
-        if User.objects.filter(username=email).exists() or User.objects.filter(email=email).exists():
-            raise forms.ValidationError("Is email se pehle se ek account bana hua hai. Login kar lijiye.")
+        email = self.cleaned_data.get("email")
+        if User.objects.filter(email__iexact=email).exists():
+            raise forms.ValidationError("This email is already registered. Please login.")
         return email
 
-    def save(self, commit=True):
-        user = super().save(commit=False)
-        user.email = self.cleaned_data["email"]
-        user.username = self.cleaned_data["email"]  # email doubles as username
-        user.first_name = self.cleaned_data["full_name"]
-        user.is_active = False  # activated only after clicking the email verification link
-        if commit:
-            user.save()
-        return user
+
+class CustomLoginForm(forms.Form):
+    username = forms.CharField(label="Username or Email", max_length=150)
+    password = forms.CharField(widget=forms.PasswordInput)
+
+    def clean(self):
+        cleaned_data = super().clean()
+        username_or_email = cleaned_data.get("username")
+        password = cleaned_data.get("password")
+
+        if username_or_email and password:
+            # Agar user ne Email input kiya hai, toh pehele User query karein
+            user = User.objects.filter(email__iexact=username_or_email).first()
+            if user:
+                username = user.username
+            else:
+                username = username_or_email
+
+            self.user_cache = authenticate(username=username, password=password)
+            if self.user_cache is None:
+                raise forms.ValidationError("Invalid username/email or password.")
+            elif not self.user_cache.is_active:
+                raise forms.ValidationError("This account is inactive.")
+        return cleaned_data
+
+    def get_user(self):
+        return self.user_cache

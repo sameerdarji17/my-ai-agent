@@ -17,7 +17,7 @@ from rest_framework.parsers import MultiPartParser
 from .models import Conversation, Message
 from .orchestrator import AgentOrchestrator
 from .serializers import ChatRequestSerializer, ConversationSerializer
-from .forms import SignupForm
+from .forms import SignupForm, CustomLoginForm
 
 FREE_ANON_MESSAGE_LIMIT = 3
 FREE_MESSAGE_LIMIT = 8  # messages allowed per rolling window
@@ -110,6 +110,23 @@ def signup_view(request):
         "form": form,
         "success_msg": success_msg,
     })
+
+
+def login_view(request):
+    """Allows login using either Username or Email address."""
+    if request.user.is_authenticated:
+        return redirect("chat-page")
+
+    if request.method == "POST":
+        form = CustomLoginForm(request.POST)
+        if form.is_valid():
+            user = form.get_user()
+            auth_login(request, user)
+            return redirect("chat-page")
+    else:
+        form = CustomLoginForm()
+
+    return render(request, "registration/login.html", {"form": form})
 
 
 def verify_email_view(request, uidb64, token):
