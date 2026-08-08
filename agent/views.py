@@ -46,39 +46,47 @@ def chat_page(request):
 
 
 def _send_verification_email(request, user):
-    uid = urlsafe_base64_encode(force_bytes(user.pk))
-    token = default_token_generator.make_token(user)
+    """Sends verification email safely without causing a 500 error if SMTP fails."""
+    try:
+        uid = urlsafe_base64_encode(force_bytes(user.pk))
+        token = default_token_generator.make_token(user)
 
-    # 1. Dynamic Live Railway Base URL fetch logic
-    site_url = getattr(settings, "SITE_BASE_URL", "https://sd-agent.up.railway.app").rstrip("/")
-    verify_url = f"{site_url}/verify-email/{uid}/{token}/"
+        # Fetch live Railway base URL
+        site_url = getattr(settings, "SITE_BASE_URL", "https://sd-agent.up.railway.app").rstrip("/")
+        verify_url = f"{site_url}/verify-email/{uid}/{token}/"
 
-    send_mail(
-        subject="Verify your email — SD AGENT",
-        message=(
-            f"Hi {user.first_name or user.username},\n\nPlease verify your email by clicking the link below:\n\n"
-            f"{verify_url}\n\nIf you didn't sign up, you can ignore this email."
-        ),
-        from_email=settings.DEFAULT_FROM_EMAIL,
-        recipient_list=[user.email],
-        fail_silently=False,
-    )
+        send_mail(
+            subject="Verify your email — SD AGENT",
+            message=(
+                f"Hi {user.first_name or user.username},\n\nPlease verify your email by clicking the link below:\n\n"
+                f"{verify_url}\n\nIf you didn't sign up, you can ignore this email."
+            ),
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            recipient_list=[user.email],
+            fail_silently=True,  # Prevents 500 Internal Server Error if SMTP configuration fails
+        )
+    except Exception:
+        pass
 
 
 def _send_welcome_email(user):
-    send_mail(
-        subject="Welcome to SD AGENT 🎉",
-        message=(
-            f"Hi {user.first_name or user.username},\n\n"
-            "Your email is verified and your account is ready to go!\n\n"
-            "You can now chat with your AI agent, search the web, upload "
-            "files, and more — right from your account.\n\n"
-            "Happy chatting!"
-        ),
-        from_email=settings.DEFAULT_FROM_EMAIL,
-        recipient_list=[user.email],
-        fail_silently=True,
-    )
+    """Sends welcome email after email verification."""
+    try:
+        send_mail(
+            subject="Welcome to SD AGENT 🎉",
+            message=(
+                f"Hi {user.first_name or user.username},\n\n"
+                "Your email is verified and your account is ready to go!\n\n"
+                "You can now chat with your AI agent, search the web, upload "
+                "files, and more — right from your account.\n\n"
+                "Happy chatting!"
+            ),
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            recipient_list=[user.email],
+            fail_silently=True,
+        )
+    except Exception:
+        pass
 
 
 def signup_view(request):
@@ -105,7 +113,7 @@ def verify_email_view(request, uidb64, token):
     if user is not None and default_token_generator.check_token(user, token):
         user.is_active = True
         user.save(update_fields=["is_active"])
-        _send_welcome_email(user)  # Auto-send Welcome Email on successful verification
+        _send_welcome_email(user)  # Send welcome email on successful verification
         auth_login(request, user)
         return redirect("chat-page")
 
