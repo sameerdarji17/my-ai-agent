@@ -4,6 +4,9 @@ from django.contrib.auth import views as auth_views
 from agent import views as agent_views
 
 urlpatterns = [
+    # Main Root Route - Opening base URL opens chat directly
+    path("", agent_views.chat_page, name="chat-page"),
+
     path("admin/", admin.site.urls),
     path("", include("agent.urls")),
     path("billing/", include("billing.urls")),
