@@ -1,4 +1,6 @@
 <!DOCTYPE html>
+{% load static %}
+
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -6,7 +8,10 @@
     <title>Sign Up — SD AGENT</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-        body { background: #f4f6f9; display: flex; align-items: center; justify-content: center; min-height: 100vh; padding: 20px; }
+        body { background: #f4f6f9; display: flex; align-items: center; justify-content: center; min-height: 100vh; padding: 20px; position: relative; }
+        .back-nav { position: absolute; top: 20px; left: 20px; }
+        .back-nav a { text-decoration: none; color: #6366f1; font-weight: 600; font-size: 14px; display: flex; align-items: center; gap: 6px; background: #ffffff; padding: 8px 14px; border-radius: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+        .back-nav a:hover { background: #eef2ff; }
         .card { background: white; width: 100%; max-width: 420px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); padding: 30px; }
         h2 { text-align: center; color: #333; margin-bottom: 20px; font-size: 24px; }
         .form-group { margin-bottom: 18px; position: relative; }
@@ -22,7 +27,6 @@
         .links a { color: #6366f1; text-decoration: none; font-weight: 600; }
         .error-list { background: #fee2e2; border: 1px solid #f87171; color: #dc2626; padding: 10px; border-radius: 8px; font-size: 13px; margin-bottom: 15px; }
 
-        /* Modal Popup */
         .modal-overlay { position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 1000; }
         .modal-box { background: white; padding: 30px; border-radius: 12px; text-align: center; max-width: 380px; width: 90%; animation: popIn 0.3s ease-out; }
         @keyframes popIn { from { transform: scale(0.8); opacity:0; } to { transform: scale(1); opacity:1; } }
@@ -33,15 +37,22 @@
 </head>
 <body>
 
+<div class="back-nav">
+    <a href="{% url 'chat-page' %}">← Back to Chat</a>
+</div>
+
 <div class="card">
     <h2>Create Account</h2>
 
     {% if form.errors %}
         <div class="error-list">
-            {% for field, errors in form.errors.items %}
-                {% for error in errors %}
+            {% for field in form %}
+                {% for error in field.errors %}
                     <p>{{ error }}</p>
                 {% endfor %}
+            {% endfor %}
+            {% for error in form.non_field_errors %}
+                <p>{{ error }}</p>
             {% endfor %}
         </div>
     {% endif %}
@@ -49,17 +60,17 @@
     <form method="post" id="signupForm">
         {% csrf_token %}
         <div class="form-group">
-            <label for="id_name">Full Name</label>
+            <label>Full Name</label>
             {{ form.name }}
         </div>
 
         <div class="form-group">
-            <label for="id_email">Email Address</label>
+            <label>Email Address</label>
             {{ form.email }}
         </div>
 
         <div class="form-group">
-            <label for="id_password">Password</label>
+            <label>Password</label>
             <div class="input-wrapper">
                 {{ form.password }}
                 <span class="toggle-pwd" onclick="togglePassword('id_password', this)">👁️</span>
@@ -67,7 +78,7 @@
         </div>
 
         <div class="form-group">
-            <label for="id_confirm_password">Confirm Password</label>
+            <label>Confirm Password</label>
             <div class="input-wrapper">
                 {{ form.confirm_password }}
                 <span class="match-badge" id="matchBadge"></span>
@@ -88,7 +99,7 @@
     <div class="modal-box">
         <h3>🎉 Link Sent to Mail!</h3>
         <p>We have sent a verification link to <strong>{{ user_email }}</strong>.<br><br>Please check your inbox, click the link to verify your account, and you will be automatically logged in.</p>
-        <button class="close-btn" onclick="window.location.href='{% url 'login' %}'">OK, Got It</button>
+        <button class="close-btn" data-url="{% url 'login' %}" onclick="window.location.href=this.dataset.url">OK, Got It</button>
     </div>
 </div>
 {% endif %}
@@ -96,10 +107,10 @@
 <script>
     function togglePassword(inputId, btn) {
         const input = document.getElementById(inputId);
-        if (input.type === "password") {
+        if (input && input.type === "password") {
             input.type = "text";
             btn.textContent = "🙈";
-        } else {
+        } else if (input) {
             input.type = "password";
             btn.textContent = "👁️";
         }
@@ -110,11 +121,12 @@
     const badge = document.getElementById('matchBadge');
 
     function checkMatch() {
-        if (!confirmPwd.value) {
+        if (!badge) return;
+        if (!confirmPwd || !confirmPwd.value) {
             badge.style.display = 'none';
             return;
         }
-        if (pwd.value === confirmPwd.value) {
+        if (pwd && pwd.value === confirmPwd.value) {
             badge.textContent = '🟢';
             badge.title = 'Passwords match!';
             badge.style.display = 'inline';

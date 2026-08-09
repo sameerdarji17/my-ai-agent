@@ -1,7 +1,16 @@
 function getCookie(name) {
-  const value = `; ${document.cookie}`;
-  const parts = value.split(`; ${name}=`);
-  if (parts.length === 2) return parts.pop().split(';').shift();
+  let cookieValue = null;
+  if (document.cookie && document.cookie !== '') {
+    const cookies = document.cookie.split(';');
+    for (let i = 0; i < cookies.length; i++) {
+      const cookie = cookies[i].trim();
+      if (cookie.substring(0, name.length + 1) === (name + '=')) {
+        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+        break;
+      }
+    }
+  }
+  return cookieValue;
 }
 
 function showGateModal(type, resetTimeIso) {
@@ -35,26 +44,30 @@ const THEME_KEY = 'myagent_theme';
 const themeToggle = document.getElementById('theme-toggle');
 function applyTheme(theme) {
   document.documentElement.setAttribute('data-theme', theme);
-  themeToggle.textContent = theme === 'light' ? '☀️' : '🌙';
+  if(themeToggle) themeToggle.textContent = theme === 'light' ? '☀️' : '🌙';
   localStorage.setItem(THEME_KEY, theme);
 }
 applyTheme(localStorage.getItem(THEME_KEY) || 'light');
-themeToggle.addEventListener('click', () => {
-  const current = document.documentElement.getAttribute('data-theme');
-  applyTheme(current === 'light' ? 'dark' : 'light');
-});
+if(themeToggle) {
+  themeToggle.addEventListener('click', () => {
+    const current = document.documentElement.getAttribute('data-theme');
+    applyTheme(current === 'light' ? 'dark' : 'light');
+  });
+}
 
 const SIDEBAR_KEY = 'myagent_sidebar_collapsed';
 const sidebar = document.getElementById('sidebar');
 const sidebarToggle = document.getElementById('sidebar-toggle');
 function applySidebar(collapsed) {
-  sidebar.classList.toggle('collapsed', collapsed);
+  if(sidebar) sidebar.classList.toggle('collapsed', collapsed);
   localStorage.setItem(SIDEBAR_KEY, collapsed ? '1' : '0');
 }
 applySidebar(localStorage.getItem(SIDEBAR_KEY) === '1');
-sidebarToggle.addEventListener('click', () => {
-  applySidebar(!sidebar.classList.contains('collapsed'));
-});
+if(sidebarToggle) {
+  sidebarToggle.addEventListener('click', () => {
+    applySidebar(!sidebar.classList.contains('collapsed'));
+  });
+}
 
 const rotatingPhrases = [
   'I can help you with something today',
@@ -64,14 +77,16 @@ const rotatingPhrases = [
 ];
 let phraseIndex = 0;
 const rotatingEl = document.getElementById('hero-rotating');
-setInterval(() => {
-  phraseIndex = (phraseIndex + 1) % rotatingPhrases.length;
-  rotatingEl.style.opacity = 0;
-  setTimeout(() => {
-    rotatingEl.textContent = rotatingPhrases[phraseIndex];
-    rotatingEl.style.opacity = 1;
-  }, 250);
-}, 3200);
+if(rotatingEl) {
+  setInterval(() => {
+    phraseIndex = (phraseIndex + 1) % rotatingPhrases.length;
+    rotatingEl.style.opacity = 0;
+    setTimeout(() => {
+      rotatingEl.textContent = rotatingPhrases[phraseIndex];
+      rotatingEl.style.opacity = 1;
+    }, 250);
+  }, 3200);
+}
 
 const inputTemplate = document.getElementById('input-template');
 const heroContainer = document.getElementById('hero-input-container');
@@ -94,6 +109,7 @@ function clearPendingAttachment() {
 }
 
 function mountInput(container) {
+  if(!container || !inputTemplate) return;
   if (!liveInputNode) {
     const node = inputTemplate.content.cloneNode(true);
     container.appendChild(node);
@@ -107,28 +123,29 @@ function mountInput(container) {
 function enterConversationMode() {
   if (inConversationMode) return;
   inConversationMode = true;
-  heroWrap.style.display = 'none';
-  chatWindow.style.display = 'flex';
-  bottomBar.style.display = 'flex';
-  document.getElementById('header-bar').classList.remove('hero-header');
+  if(heroWrap) heroWrap.style.display = 'none';
+  if(chatWindow) chatWindow.style.display = 'flex';
+  if(bottomBar) bottomBar.style.display = 'flex';
+  const headerBar = document.getElementById('header-bar');
+  if(headerBar) headerBar.classList.remove('hero-header');
   mountInput(bottomBar);
 }
 
 function enterHeroMode() {
   inConversationMode = false;
-  heroWrap.style.display = 'flex';
-  chatWindow.style.display = 'none';
-  bottomBar.style.display = 'none';
+  if(heroWrap) heroWrap.style.display = 'flex';
+  if(chatWindow) chatWindow.style.display = 'none';
+  if(bottomBar) bottomBar.style.display = 'none';
   mountInput(heroContainer);
-  thread.innerHTML = '';
+  if(thread) thread.innerHTML = '';
   clearPendingAttachment();
 }
 
-function scrollToBottom() { chatWindow.scrollTop = 999999; }
+function scrollToBottom() { if(chatWindow) chatWindow.scrollTop = 999999; }
 const IMAGE_URL_REGEX = /(https?:\/\/image\.pollinations\.ai\/prompt\/[^\s)]+|https?:\/\/\S+\.(?:png|jpg|jpeg|gif|webp)(?:\?\S+)?)/gi;
 
 function escapeHtml(s) {
-  return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  return (s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
 
 function convertMarkdownTables(text) {
@@ -207,7 +224,7 @@ function addUserBubble(text) {
     </div>`;
   row.querySelector('.bubble').textContent = text;
   wireMessageActions(row, text);
-  thread.appendChild(row);
+  if(thread) thread.appendChild(row);
   scrollToBottom();
 }
 
@@ -223,7 +240,7 @@ function addAssistantBubble(text) {
     </div>`;
   renderBubbleContent(row.querySelector('.bubble'), text);
   wireMessageActions(row, text);
-  thread.appendChild(row);
+  if(thread) thread.appendChild(row);
   scrollToBottom();
 }
 
@@ -260,7 +277,7 @@ function addTypingIndicator() {
   row.className = 'row assistant';
   row.id = 'typing-row';
   row.innerHTML = '<div class="bubble typing"><span></span><span></span><span></span></div>';
-  thread.appendChild(row);
+  if(thread) thread.appendChild(row);
   scrollToBottom();
 }
 
@@ -287,13 +304,17 @@ let allConversations = [];
 async function loadHistoryList() {
   try {
     const resp = await fetch('/api/agent/conversations/');
-    const data = await resp.json();
-    allConversations = data;
-    renderHistoryList(chatSearchInput ? chatSearchInput.value : '');
+    const contentType = resp.headers.get('content-type');
+    if (contentType && contentType.includes('application/json')) {
+      const data = await resp.json();
+      allConversations = data;
+      renderHistoryList(chatSearchInput ? chatSearchInput.value : '');
+    }
   } catch (err) {}
 }
 
 function renderHistoryList(filterText) {
+  if(!historyList) return;
   const filter = (filterText || '').trim().toLowerCase();
   historyList.innerHTML = '';
   allConversations
@@ -313,30 +334,36 @@ if (chatSearchInput) {
 
 async function openConversation(id) {
   conversationId = id;
-  thread.innerHTML = '';
+  if(thread) thread.innerHTML = '';
   enterConversationMode();
   try {
     const resp = await fetch(`/api/agent/conversations/${id}/`);
-    const data = await resp.json();
-    (data.messages || []).forEach(m => {
-      if (m.role === 'user') {
-        addUserBubble(typeof m.content === 'string' ? m.content : JSON.stringify(m.content));
-      } else if (m.role === 'assistant') {
-        let text = '';
-        if (typeof m.content === 'string') text = m.content;
-        else if (m.content && typeof m.content === 'object' && 'content' in m.content) text = m.content.content || '';
-        if (text) addAssistantBubble(text);
-      }
-    });
+    const contentType = resp.headers.get('content-type');
+    if (contentType && contentType.includes('application/json')) {
+      const data = await resp.json();
+      (data.messages || []).forEach(m => {
+        if (m.role === 'user') {
+          addUserBubble(typeof m.content === 'string' ? m.content : JSON.stringify(m.content));
+        } else if (m.role === 'assistant') {
+          let text = '';
+          if (typeof m.content === 'string') text = m.content;
+          else if (m.content && typeof m.content === 'object' && 'content' in m.content) text = m.content.content || '';
+          if (text) addAssistantBubble(text);
+        }
+      });
+    }
   } catch (err) {}
   loadHistoryList();
 }
 
-document.getElementById('new-chat-btn').addEventListener('click', () => {
-  conversationId = null;
-  enterHeroMode();
-  loadHistoryList();
-});
+const newChatBtn = document.getElementById('new-chat-btn');
+if(newChatBtn) {
+  newChatBtn.addEventListener('click', () => {
+    conversationId = null;
+    enterHeroMode();
+    loadHistoryList();
+  });
+}
 
 function wireInputEvents(container) {
   const form = container;
@@ -393,15 +420,17 @@ function wireInputEvents(container) {
     }
   }
 
-  attachBtn.addEventListener('click', (e) => {
-    e.stopPropagation();
-    attachMenu.classList.toggle('open');
-  });
-  document.addEventListener('click', () => attachMenu.classList.remove('open'));
-  attachMenu.addEventListener('click', (e) => e.stopPropagation());
+  if(attachBtn && attachMenu) {
+    attachBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      attachMenu.classList.toggle('open');
+    });
+    document.addEventListener('click', () => attachMenu.classList.remove('open'));
+    attachMenu.addEventListener('click', (e) => e.stopPropagation());
+  }
 
-  menuUploadFile.addEventListener('click', () => { fileInput.accept = '.pdf,.docx,.txt,.md,.csv,.json'; fileInput.click(); attachMenu.classList.remove('open'); });
-  menuUploadImage.addEventListener('click', () => { fileInput.accept = 'image/*'; fileInput.click(); attachMenu.classList.remove('open'); });
+  if(menuUploadFile) menuUploadFile.addEventListener('click', () => { fileInput.accept = '.pdf,.docx,.txt,.md,.csv,.json'; fileInput.click(); attachMenu.classList.remove('open'); });
+  if(menuUploadImage) menuUploadImage.addEventListener('click', () => { fileInput.accept = 'image/*'; fileInput.click(); attachMenu.classList.remove('open'); });
 
   const menuGenerateImage = container.querySelector('#menu-generate-image');
   if (menuGenerateImage) {
@@ -417,32 +446,39 @@ function wireInputEvents(container) {
     });
   }
 
-  fileInput.addEventListener('change', async () => {
-    const file = fileInput.files[0];
-    if (!file) return;
-    const formData = new FormData();
-    formData.append('file', file);
-    attachChipText.textContent = 'Uploading…';
-    pendingAttachment.style.display = 'block';
-    try {
-      const resp = await fetch('/api/agent/upload/', {
-        method: 'POST',
-        headers: { 'X-CSRFToken': getCookie('csrftoken') },
-        body: formData,
-      });
-      const data = await resp.json();
-      if (resp.ok) {
-        pendingFilename = data.filename;
-        attachChipText.textContent = '📎 ' + data.filename;
-      } else {
-        attachChipText.textContent = 'Error: ' + (data.error || 'upload failed');
+  if(fileInput) {
+    fileInput.addEventListener('change', async () => {
+      const file = fileInput.files[0];
+      if (!file) return;
+      const formData = new FormData();
+      formData.append('file', file);
+      attachChipText.textContent = 'Uploading…';
+      pendingAttachment.style.display = 'block';
+      try {
+        const resp = await fetch('/api/agent/upload/', {
+          method: 'POST',
+          headers: { 'X-CSRFToken': getCookie('csrftoken') || '' },
+          body: formData,
+        });
+        const contentType = resp.headers.get('content-type');
+        if (contentType && contentType.includes('application/json')) {
+          const data = await resp.json();
+          if (resp.ok) {
+            pendingFilename = data.filename;
+            attachChipText.textContent = '📎 ' + data.filename;
+          } else {
+            attachChipText.textContent = 'Error: ' + (data.error || 'upload failed');
+            pendingFilename = null;
+          }
+        } else {
+          showGateModal('login');
+        }
+      } catch (err) {
+        attachChipText.textContent = 'Upload error';
         pendingFilename = null;
       }
-    } catch (err) {
-      attachChipText.textContent = 'Upload error';
-      pendingFilename = null;
-    }
-  });
+    });
+  }
 
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
@@ -468,25 +504,33 @@ function wireInputEvents(container) {
     addTypingIndicator();
 
     try {
+      const csrfToken = getCookie('csrftoken') || '';
       const resp = await fetch('/api/agent/chat/', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrftoken') },
+        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken },
         body: JSON.stringify({ conversation_id: conversationId, message: text, style: window.__myagentStyle || 'normal' }),
       });
-      const data = await resp.json();
 
-      if (resp.status === 403 && data.login_required) {
+      const contentType = resp.headers.get('content-type');
+      if (contentType && contentType.includes('application/json')) {
+        const data = await resp.json();
+        if (resp.status === 403 && data.login_required) {
+          document.getElementById('typing-row')?.remove();
+          showGateModal('login');
+        } else if (resp.status === 403 && data.upgrade_required) {
+          document.getElementById('typing-row')?.remove();
+          showGateModal('upgrade', data.reset_time);
+        } else if (!resp.ok) {
+          replaceTypingWithReply('Error: ' + (data.detail || JSON.stringify(data)));
+        } else {
+          conversationId = data.conversation_id;
+          replaceTypingWithReply(data.reply);
+          loadHistoryList();
+        }
+      } else {
+        // Returned HTML (Redirected to login or CSRF error)
         document.getElementById('typing-row')?.remove();
         showGateModal('login');
-      } else if (resp.status === 403 && data.upgrade_required) {
-        document.getElementById('typing-row')?.remove();
-        showGateModal('upgrade', data.reset_time);
-      } else if (!resp.ok) {
-        replaceTypingWithReply('Error: ' + (data.detail || JSON.stringify(data)));
-      } else {
-        conversationId = data.conversation_id;
-        replaceTypingWithReply(data.reply);
-        loadHistoryList();
       }
     } catch (err) {
       replaceTypingWithReply('Network error: ' + err.message);
@@ -517,15 +561,20 @@ if (shareBtn) {
     try {
       const resp = await fetch(`/api/agent/conversations/${conversationId}/share/`, {
         method: 'POST',
-        headers: { 'X-CSRFToken': getCookie('csrftoken') },
+        headers: { 'X-CSRFToken': getCookie('csrftoken') || '' },
       });
-      const data = await resp.json();
-      if (resp.ok && data.share_url) {
-        await navigator.clipboard.writeText(data.share_url).catch(() => {});
-        shareBtn.textContent = '✓ Link copied';
-        setTimeout(() => { shareBtn.textContent = '🔗 Share'; }, 2000);
+      const contentType = resp.headers.get('content-type');
+      if (contentType && contentType.includes('application/json')) {
+        const data = await resp.json();
+        if (resp.ok && data.share_url) {
+          await navigator.clipboard.writeText(data.share_url).catch(() => {});
+          shareBtn.textContent = '✓ Link copied';
+          setTimeout(() => { shareBtn.textContent = '🔗 Share'; }, 2000);
+        } else {
+          alert('Share link nahi ban paya: ' + (data.error || 'unknown error'));
+        }
       } else {
-        alert('Share link nahi ban paya: ' + (data.error || 'unknown error'));
+        showGateModal('login');
       }
     } catch (err) {
       alert('Network error while sharing.');
