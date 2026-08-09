@@ -9,20 +9,20 @@ import dj_database_url
 from dotenv import load_dotenv
 
 BASE_DIR = Path(__file__).resolve().parent.parent
-load_dotenv(BASE_DIR / ".env")  # loads variables from .env if the file exists
+load_dotenv(BASE_DIR / ".env")
 
 # ---------------------------------------------------------------------------
 # SECURITY
 # ---------------------------------------------------------------------------
 SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY", "dev-only-change-this-in-production")
 DEBUG = os.environ.get("DJANGO_DEBUG", "True") == "True"
-ALLOWED_HOSTS = os.environ.get("DJANGO_ALLOWED_HOSTS", "*").split(",")
 
-# CSRF Trusted Origins for Railway Deployment
+ALLOWED_HOSTS = ["*"]
+
 CSRF_TRUSTED_ORIGINS = [
+    "https://*.up.railway.app",
     "https://web-production-d823e.up.railway.app",
     "https://sd-agent.up.railway.app",
-    "https://*.up.railway.app",
     "http://localhost:8000",
     "http://127.0.0.1:8000",
 ]
@@ -61,7 +61,7 @@ ROOT_URLCONF = "myagent_project.urls"
 
 TEMPLATES = [
     {
-        "BACKEND": "django.template.backends.DjangoTemplates",
+        "BACKEND": "django.template.backends.django.DjangoTemplates",
         "DIRS": [],
         "APP_DIRS": True,
         "OPTIONS": {
@@ -101,13 +101,10 @@ TIME_ZONE = "Asia/Kolkata"
 USE_I18N = True
 USE_TZ = True
 
-STATIC_URL = "static/"
+STATIC_URL = "/static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
-STORAGES = {
-    "staticfiles": {
-        "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
-    },
-}
+STATICFILES_STORAGE = "whitenoise.storage.CompressedStaticFilesStorage"
+
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 # ---------------------------------------------------------------------------
@@ -126,7 +123,6 @@ REST_FRAMEWORK = {
 # AGENT / LLM CONFIG
 # ---------------------------------------------------------------------------
 GROQ_API_KEY = os.environ.get("GROQ_API_KEY", "")
-
 GROQ_MODEL = os.environ.get("GROQ_MODEL", "llama-3.3-70b-versatile")
 GROQ_BASE_URL = "https://api.groq.com/openai/v1"
 
@@ -150,13 +146,13 @@ MAX_AGENT_TURNS = int(os.environ.get("MAX_AGENT_TURNS", "10"))
 MAX_HISTORY_MESSAGES = int(os.environ.get("MAX_HISTORY_MESSAGES", "8"))
 
 # ---------------------------------------------------------------------------
-# EMAIL CONFIGURATION (SAFE SMTP CONFIG)
+# EMAIL CONFIGURATION
 # ---------------------------------------------------------------------------
 EMAIL_HOST = os.environ.get("EMAIL_HOST", "smtp.gmail.com")
 
 try:
     EMAIL_PORT = int(os.environ.get("EMAIL_PORT", "587"))
-except (ValueError, TypeError):
+except Exception:
     EMAIL_PORT = 587
 
 EMAIL_HOST_USER = os.environ.get("EMAIL_HOST_USER", "")
