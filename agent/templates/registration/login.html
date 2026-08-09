@@ -1,69 +1,83 @@
 <!DOCTYPE html>
-<html lang="hi">
+<html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Login</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@600;700&family=IBM+Plex+Sans:wght@400;500&display=swap" rel="stylesheet">
-<style>
-  :root { --bg:#0D0E12; --panel:#16171D; --border:#24262E; --text:#EDEAE2; --dim:#8B8D97; --accent:#7C83FD; }
-  [data-theme="light"] { --bg:#FAFAF9; --panel:#FFFFFF; --border:#E5E4E0; --text:#1C1C1E; --dim:#7A7A82; --accent:#635BFF; }
-  * { box-sizing: border-box; }
-  body { margin:0; background:var(--bg); color:var(--text); font-family:'IBM Plex Sans',sans-serif;
-    min-height:100vh; display:flex; flex-direction:column; align-items:center; justify-content:center;
-    transition:background 0.2s ease, color 0.2s ease; padding:20px; }
-  .top-bar { width:340px; display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; }
-  .back-link { color:var(--dim); text-decoration:none; font-size:13px; }
-  .back-link:hover { color:var(--text); }
-  .theme-toggle-btn { background:transparent; border:1px solid var(--border); color:var(--text); border-radius:8px;
-    padding:5px 9px; cursor:pointer; font-size:13px; }
-  .card { background:var(--panel); border:1px solid var(--border); border-radius:16px; padding:36px;
-    width:340px; }
-  h1 { font-family:'Space Grotesk',sans-serif; font-size:22px; margin:0 0 22px 0; }
-  label { font-size:12px; color:var(--dim); display:block; margin-bottom:6px; }
-  input { width:100%; background:var(--bg); border:1px solid var(--border); border-radius:8px; color:var(--text);
-    padding:10px 12px; font-size:14px; margin-bottom:16px; }
-  input:focus { outline:none; border-color:var(--accent); }
-  button[type="submit"] { width:100%; background:var(--accent); color:#fff; border:none; border-radius:10px; padding:12px;
-    font-family:'Space Grotesk',sans-serif; font-weight:600; cursor:pointer; }
-  .errorlist { color:#FF7A7A; font-size:12px; list-style:none; padding:0; margin:-10px 0 14px 0; }
-  .foot { text-align:center; margin-top:18px; font-size:13px; color:var(--dim); }
-  .foot a { color:var(--accent); text-decoration:none; }
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Log In — SD AGENT</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body { background: #f4f6f9; display: flex; align-items: center; justify-content: center; min-height: 100vh; padding: 20px; }
+        .card { background: white; width: 100%; max-width: 400px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); padding: 30px; }
+        h2 { text-align: center; color: #333; margin-bottom: 20px; font-size: 24px; }
+        .form-group { margin-bottom: 18px; position: relative; }
+        label { display: block; margin-bottom: 6px; color: #555; font-size: 14px; font-weight: 600; }
+        .input-wrapper { position: relative; display: flex; align-items: center; }
+        .form-control { width: 100%; padding: 12px 40px 12px 14px; border: 1px solid #ccc; border-radius: 8px; font-size: 14px; outline: none; transition: 0.2s; }
+        .form-control:focus { border-color: #6366f1; box-shadow: 0 0 0 3px rgba(99,102,241,0.15); }
+        .toggle-pwd { position: absolute; right: 12px; cursor: pointer; user-select: none; font-size: 16px; opacity: 0.6; }
+        .btn { width: 100%; padding: 12px; background: #6366f1; color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; transition: 0.2s; margin-top: 10px; }
+        .btn:hover { background: #4f46e5; }
+        .links { margin-top: 20px; text-align: center; font-size: 14px; color: #666; display: flex; justify-content: space-between; }
+        .links a { color: #6366f1; text-decoration: none; font-weight: 600; }
+        .error-list { background: #fee2e2; border: 1px solid #f87171; color: #dc2626; padding: 10px; border-radius: 8px; font-size: 13px; margin-bottom: 15px; }
+    </style>
 </head>
 <body>
-  <div class="top-bar">
-    <a class="back-link" href="/">&larr; Back to chat</a>
-    <button class="theme-toggle-btn" id="theme-toggle-btn">🌙</button>
-  </div>
-  <div class="card">
-    <h1>Log in</h1>
+
+<div class="card">
+    <h2>Welcome Back</h2>
+
+    {% if form.errors %}
+        <div class="error-list">
+            {% for field, errors in form.errors.items %}
+                {% for error in errors %}
+                    <p>{{ error }}</p>
+                {% endfor %}
+            {% endfor %}
+            {% if form.non_field_errors %}
+                {% for error in form.non_field_errors %}
+                    <p>{{ error }}</p>
+                {% endfor %}
+            {% endif %}
+        </div>
+    {% endif %}
+
     <form method="post">
-      {% csrf_token %}
-      {% if form.non_field_errors %}
-        <ul class="errorlist">{% for e in form.non_field_errors %}<li>{{ e }}</li>{% endfor %}</ul>
-      {% endif %}
-      <label>Email / Username</label>
-      <input type="text" name="username" required autofocus>
-      <label>Password</label>
-      <input type="password" name="password" required>
-      <button type="submit">Log in</button>
+        {% csrf_token %}
+        <div class="form-group">
+            <label for="id_email">Email Address</label>
+            {{ form.email }}
+        </div>
+
+        <div class="form-group">
+            <label for="id_login_password">Password</label>
+            <div class="input-wrapper">
+                {{ form.password }}
+                <span class="toggle-pwd" onclick="togglePassword('id_login_password', this)">👁️</span>
+            </div>
+        </div>
+
+        <button type="submit" class="btn">Log In</button>
     </form>
-    <div class="foot">Don't have an account? <a href="/signup/">Sign up</a></div>
-  </div>
-  <script>
-    const THEME_KEY = 'myagent_theme';
-    const btn = document.getElementById('theme-toggle-btn');
-    function applyTheme(t) {
-      document.documentElement.setAttribute('data-theme', t);
-      btn.textContent = t === 'light' ? '☀️' : '🌙';
-      localStorage.setItem(THEME_KEY, t);
+
+    <div class="links">
+        <a href="{% url 'password_reset' %}">Forgot Password?</a>
+        <a href="{% url 'signup' %}">Create Account</a>
+    </div>
+</div>
+
+<script>
+    function togglePassword(inputId, btn) {
+        const input = document.getElementById(inputId);
+        if (input.type === "password") {
+            input.type = "text";
+            btn.textContent = "🙈";
+        } else {
+            input.type = "password";
+            btn.textContent = "👁️";
+        }
     }
-    applyTheme(localStorage.getItem(THEME_KEY) || 'light');
-    btn.addEventListener('click', () => {
-      applyTheme(document.documentElement.getAttribute('data-theme') === 'light' ? 'dark' : 'light');
-    });
-  </script>
+</script>
+
 </body>
 </html>

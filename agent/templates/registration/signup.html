@@ -1,71 +1,135 @@
 <!DOCTYPE html>
-<html lang="hi">
+<html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Signup</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@600;700&family=IBM+Plex+Sans:wght@400;500&display=swap" rel="stylesheet">
-<style>
-  :root { --bg:#0D0E12; --panel:#16171D; --border:#24262E; --text:#EDEAE2; --dim:#8B8D97; --accent:#7C83FD; }
-  [data-theme="light"] { --bg:#FAFAF9; --panel:#FFFFFF; --border:#E5E4E0; --text:#1C1C1E; --dim:#7A7A82; --accent:#635BFF; }
-  * { box-sizing: border-box; }
-  body { margin:0; background:var(--bg); color:var(--text); font-family:'IBM Plex Sans',sans-serif;
-    min-height:100vh; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:30px;
-    transition:background 0.2s ease, color 0.2s ease; }
-  .top-bar { width:340px; display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; }
-  .back-link { color:var(--dim); text-decoration:none; font-size:13px; }
-  .back-link:hover { color:var(--text); }
-  .theme-toggle-btn { background:transparent; border:1px solid var(--border); color:var(--text); border-radius:8px;
-    padding:5px 9px; cursor:pointer; font-size:13px; }
-  .card { background:var(--panel); border:1px solid var(--border); border-radius:16px; padding:36px;
-    width:340px; }
-  h1 { font-family:'Space Grotesk',sans-serif; font-size:22px; margin:0 0 6px 0; }
-  p.sub { color:var(--dim); font-size:13px; margin:0 0 22px 0; }
-  label { font-size:12px; color:var(--dim); display:block; margin-bottom:6px; }
-  input { width:100%; background:var(--bg); border:1px solid var(--border); border-radius:8px; color:var(--text);
-    padding:10px 12px; font-size:14px; margin-bottom:14px; }
-  input:focus { outline:none; border-color:var(--accent); }
-  button { width:100%; background:var(--accent); color:#fff; border:none; border-radius:10px; padding:12px;
-    font-family:'Space Grotesk',sans-serif; font-weight:600; cursor:pointer; margin-top:6px; }
-  .errorlist { color:#FF7A7A; font-size:12px; list-style:none; padding:0; margin:-8px 0 12px 0; }
-  .helptext { color:var(--dim); font-size:11px; margin:-10px 0 12px 0; display:block; }
-  .foot { text-align:center; margin-top:18px; font-size:13px; color:var(--dim); }
-  .foot a { color:var(--accent); text-decoration:none; }
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Sign Up — SD AGENT</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body { background: #f4f6f9; display: flex; align-items: center; justify-content: center; min-height: 100vh; padding: 20px; }
+        .card { background: white; width: 100%; max-width: 420px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); padding: 30px; }
+        h2 { text-align: center; color: #333; margin-bottom: 20px; font-size: 24px; }
+        .form-group { margin-bottom: 18px; position: relative; }
+        label { display: block; margin-bottom: 6px; color: #555; font-size: 14px; font-weight: 600; }
+        .input-wrapper { position: relative; display: flex; align-items: center; }
+        .form-control { width: 100%; padding: 12px 40px 12px 14px; border: 1px solid #ccc; border-radius: 8px; font-size: 14px; outline: none; transition: 0.2s; }
+        .form-control:focus { border-color: #6366f1; box-shadow: 0 0 0 3px rgba(99,102,241,0.15); }
+        .toggle-pwd { position: absolute; right: 12px; cursor: pointer; user-select: none; font-size: 16px; opacity: 0.6; }
+        .match-badge { position: absolute; right: 36px; font-size: 16px; display: none; }
+        .btn { width: 100%; padding: 12px; background: #6366f1; color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; transition: 0.2s; margin-top: 10px; }
+        .btn:hover { background: #4f46e5; }
+        .links { margin-top: 20px; text-align: center; font-size: 14px; color: #666; }
+        .links a { color: #6366f1; text-decoration: none; font-weight: 600; }
+        .error-list { background: #fee2e2; border: 1px solid #f87171; color: #dc2626; padding: 10px; border-radius: 8px; font-size: 13px; margin-bottom: 15px; }
+
+        /* Modal Popup */
+        .modal-overlay { position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 1000; }
+        .modal-box { background: white; padding: 30px; border-radius: 12px; text-align: center; max-width: 380px; width: 90%; animation: popIn 0.3s ease-out; }
+        @keyframes popIn { from { transform: scale(0.8); opacity:0; } to { transform: scale(1); opacity:1; } }
+        .modal-box h3 { color: #10b981; margin-bottom: 10px; font-size: 20px; }
+        .modal-box p { color: #4b5563; font-size: 14px; line-height: 1.5; margin-bottom: 20px; }
+        .modal-box .close-btn { background: #10b981; color: white; border:none; padding: 10px 20px; border-radius: 6px; font-weight: bold; cursor: pointer; }
+    </style>
 </head>
 <body>
-  <div class="top-bar">
-    <a class="back-link" href="/">&larr; Back to chat</a>
-    <button class="theme-toggle-btn" id="theme-toggle-btn">🌙</button>
-  </div>
-  <div class="card">
-    <h1>Create an account</h1>
-    <p class="sub">Sign up to save your chat history for free.</p>
-    <form method="post">
-      {% csrf_token %}
-      {% for field in form %}
-        <label>{{ field.label }}</label>
-        {{ field }}
-        {% if field.help_text %}<span class="helptext">{{ field.help_text }}</span>{% endif %}
-        {% if field.errors %}<ul class="errorlist">{% for e in field.errors %}<li>{{ e }}</li>{% endfor %}</ul>{% endif %}
-      {% endfor %}
-      <button type="submit">Sign up</button>
+
+<div class="card">
+    <h2>Create Account</h2>
+
+    {% if form.errors %}
+        <div class="error-list">
+            {% for field, errors in form.errors.items %}
+                {% for error in errors %}
+                    <p>{{ error }}</p>
+                {% endfor %}
+            {% endfor %}
+        </div>
+    {% endif %}
+
+    <form method="post" id="signupForm">
+        {% csrf_token %}
+        <div class="form-group">
+            <label for="id_name">Full Name</label>
+            {{ form.name }}
+        </div>
+
+        <div class="form-group">
+            <label for="id_email">Email Address</label>
+            {{ form.email }}
+        </div>
+
+        <div class="form-group">
+            <label for="id_password">Password</label>
+            <div class="input-wrapper">
+                {{ form.password }}
+                <span class="toggle-pwd" onclick="togglePassword('id_password', this)">👁️</span>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label for="id_confirm_password">Confirm Password</label>
+            <div class="input-wrapper">
+                {{ form.confirm_password }}
+                <span class="match-badge" id="matchBadge"></span>
+                <span class="toggle-pwd" onclick="togglePassword('id_confirm_password', this)">👁️</span>
+            </div>
+        </div>
+
+        <button type="submit" class="btn">Sign Up</button>
     </form>
-    <div class="foot">Already have an account? <a href="/login/">Log in</a></div>
-  </div>
-  <script>
-    const THEME_KEY = 'myagent_theme';
-    const btn = document.getElementById('theme-toggle-btn');
-    function applyTheme(t) {
-      document.documentElement.setAttribute('data-theme', t);
-      btn.textContent = t === 'light' ? '☀️' : '🌙';
-      localStorage.setItem(THEME_KEY, t);
+
+    <div class="links">
+        Already have an account? <a href="{% url 'login' %}">Log In</a>
+    </div>
+</div>
+
+{% if show_modal %}
+<div class="modal-overlay">
+    <div class="modal-box">
+        <h3>🎉 Link Sent to Mail!</h3>
+        <p>We have sent a verification link to <strong>{{ user_email }}</strong>.<br><br>Please check your inbox, click the link to verify your account, and you will be automatically logged in.</p>
+        <button class="close-btn" onclick="window.location.href='{% url 'login' %}'">OK, Got It</button>
+    </div>
+</div>
+{% endif %}
+
+<script>
+    function togglePassword(inputId, btn) {
+        const input = document.getElementById(inputId);
+        if (input.type === "password") {
+            input.type = "text";
+            btn.textContent = "🙈";
+        } else {
+            input.type = "password";
+            btn.textContent = "👁️";
+        }
     }
-    applyTheme(localStorage.getItem(THEME_KEY) || 'light');
-    btn.addEventListener('click', () => {
-      applyTheme(document.documentElement.getAttribute('data-theme') === 'light' ? 'dark' : 'light');
-    });
-  </script>
+
+    const pwd = document.getElementById('id_password');
+    const confirmPwd = document.getElementById('id_confirm_password');
+    const badge = document.getElementById('matchBadge');
+
+    function checkMatch() {
+        if (!confirmPwd.value) {
+            badge.style.display = 'none';
+            return;
+        }
+        if (pwd.value === confirmPwd.value) {
+            badge.textContent = '🟢';
+            badge.title = 'Passwords match!';
+            badge.style.display = 'inline';
+        } else {
+            badge.textContent = '🔴';
+            badge.title = 'Passwords do not match!';
+            badge.style.display = 'inline';
+        }
+    }
+
+    if (pwd && confirmPwd) {
+        pwd.addEventListener('input', checkMatch);
+        confirmPwd.addEventListener('input', checkMatch);
+    }
+</script>
+
 </body>
 </html>

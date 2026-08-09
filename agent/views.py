@@ -20,12 +20,12 @@ from .serializers import ChatRequestSerializer, ConversationSerializer
 from .forms import SignupForm, CustomLoginForm
 
 FREE_ANON_MESSAGE_LIMIT = 3
-FREE_MESSAGE_LIMIT = 8  # messages allowed per rolling window
-FREE_WINDOW_HOURS = 5  # window length in hours
+FREE_MESSAGE_LIMIT = 8
+FREE_WINDOW_HOURS = 5
 
 
 def chat_page(request):
-    """Serves the browser-based chat UI (templates/agent/chat.html)."""
+    """Serves the browser-based chat UI."""
     is_premium = False
     display_name = ""
     if request.user.is_authenticated:
@@ -33,7 +33,8 @@ def chat_page(request):
 
         sub, _ = Subscription.objects.get_or_create(user=request.user, defaults={"plan": "free", "status": "paid"})
         is_premium = sub.is_premium
-        display_name = request.user.first_name or request.user.username
+        # Display full name or first name instead of technical username
+        display_name = request.user.get_full_name() or request.user.first_name or request.user.email.split('@')[0]
     return render(
         request,
         "agent/chat.html",
@@ -47,7 +48,7 @@ def chat_page(request):
 
 
 def _send_email_in_background(subject, message, recipient_email):
-    """Sends email in a separate background thread to prevent Gunicorn worker timeouts."""
+    """Sends email in a separate thread so UI never blocks or times out."""
     try:
         send_mail(
             subject=subject,
@@ -61,7 +62,7 @@ def _send_email_in_background(subject, message, recipient_email):
 
 
 def _send_verification_email(request, user):
-    """Triggers verification email asynchronously without blocking the main HTTP request."""
+    """Triggers verification email asynchronously."""
     try:
         uid = urlsafe_base64_encode(force_bytes(user.pk))
         token = default_token_generator.make_token(user)
@@ -70,11 +71,32 @@ def _send_verification_email(request, user):
 
         subject = "Verify your email — SD AGENT"
         message = (
-            f"Hi {user.first_name or user.username},\n\nPlease verify your email by clicking the link below:\n\n"
-            f"{verify_url}\n\nIf you didn't sign up, you can ignore this email."
+            f"Hi {user.first_name or user.email},\n\n"
+            f"Thank you for signing up with SD AGENT! Please verify your email by clicking the link below:\n\n"
+            f"{verify_url}\n\n"
+            f"Once verified, you will be automatically logged in to your account.\n\n"
+            f"If you didn't sign up, please ignore this email."
         )
 
-        # Execute in background thread so HTTP response returns instantly
+        thread = threading.Thread(
+            target=_send_email_in_background,
+            args=(subject, message, user.email)
+        )
+        thread.start()
+    except Exception:
+        pass
+
+
+def _send_welcome_email(user):
+    """Sends Welcome Email after user clicks verification link."""
+    try:
+        subject = "Welcome to SD AGENT 🎉"
+        message = (
+            f"Hi {user.first_name or user.email},\n\n"
+            f"Welcome aboard! 🎉 Your email has been successfully verified.\n\n"
+            f"Your account is now fully active. You can chat with your AI agent, search the web, execute code, upload files, and more.\n\n"
+            f"Happy Chatting!\nSD AGENT Team"
+        )
         thread = threading.Thread(
             target=_send_email_in_background,
             args=(subject, message, user.email)
@@ -85,35 +107,36 @@ def _send_verification_email(request, user):
 
 
 def signup_view(request):
-    """Instant-activation signup view to prevent login block and timeout errors."""
-    success_msg = None
+    """Signup view requiring email verification link before login."""
+    show_modal = False
+    user_email = ""
     if request.method == "POST":
         form = SignupForm(request.POST)
         if form.is_valid():
             try:
                 user = form.save(commit=False)
-                user.is_active = True  # Immediately active so login never blocks
+                user.is_active = False  # Stay inactive until email verification
                 user.save()
 
-                # Send verification email in background
                 _send_verification_email(request, user)
 
-                # Auto login immediately
-                auth_login(request, user)
-                return redirect("chat-page")
+                show_modal = True
+                user_email = user.email
+                form = SignupForm()  # Clear form on success
             except Exception as e:
-                form.add_error(None, f"Error: {str(e)}")
+                form.add_error(None, f"Signup Error: {str(e)}")
     else:
         form = SignupForm()
 
     return render(request, "registration/signup.html", {
         "form": form,
-        "success_msg": success_msg,
+        "show_modal": show_modal,
+        "user_email": user_email,
     })
 
 
 def login_view(request):
-    """Allows login using either Username or Email address."""
+    """Login view using Email and Password."""
     if request.user.is_authenticated:
         return redirect("chat-page")
 
@@ -130,7 +153,7 @@ def login_view(request):
 
 
 def verify_email_view(request, uidb64, token):
-    """Handles verification link click from Gmail."""
+    """Verifies user email, sends Welcome Email, and auto-logins user."""
     try:
         uid = force_str(urlsafe_base64_decode(uidb64))
         user = User.objects.get(pk=uid)
@@ -140,17 +163,15 @@ def verify_email_view(request, uidb64, token):
     if user is not None and default_token_generator.check_token(user, token):
         user.is_active = True
         user.save(update_fields=["is_active"])
-        auth_login(request, user)  # Auto-login on email link click
+        _send_welcome_email(user)  # Send Welcome Email 🎉
+        auth_login(request, user)
         return redirect("chat-page")
 
     return render(request, "registration/verify_failed.html")
 
 
 class AgentChatView(APIView):
-    """
-    POST /api/agent/chat/
-    Handles limits, authentication checks, and routes messages to orchestrator.
-    """
+    """POST /api/agent/chat/"""
 
     def post(self, request):
         serializer = ChatRequestSerializer(data=request.data)
@@ -165,7 +186,6 @@ class AgentChatView(APIView):
             sub, _ = Subscription.objects.get_or_create(user=request.user, defaults={"plan": "free", "status": "paid"})
             is_premium = sub.is_premium
 
-            # Check Free User Message Limit
             if not is_premium:
                 from django.utils import timezone
                 from datetime import timedelta
@@ -188,14 +208,12 @@ class AgentChatView(APIView):
                             "reset_time": reset_time.isoformat(),
                             "detail": (
                                 f"Free limit khatam ho gaya. Aap {reset_time_local.strftime('%I:%M %p')} "
-                                "ke baad phir se try kar sakte hain, ya Premium le kar unlimited "
-                                "use kar sakte hain."
+                                "ke baad phir se try kar sakte hain, ya Premium le kar unlimited use kar sakte hain."
                             ),
                         },
                         status=status.HTTP_403_FORBIDDEN,
                     )
         else:
-            # Anonymous / Non-logged in Users Check
             if not request.session.session_key:
                 request.session.save()
             count = request.session.get("anon_msg_count", 0)
@@ -204,7 +222,7 @@ class AgentChatView(APIView):
                     {
                         "login_required": True,
                         "upgrade_required": False,
-                        "detail": "Free message limit khatam ho gaya. Aage chalane ke liye login/signup karein.",
+                        "detail": "Free limit khatam ho gaya. Aage chalane ke liye login/signup karein.",
                     },
                     status=status.HTTP_403_FORBIDDEN,
                 )
@@ -238,8 +256,6 @@ class AgentChatView(APIView):
 
 
 class ConversationDetailView(APIView):
-    """GET /api/agent/conversations/<id>/ -- full history + tool trace."""
-
     def get(self, request, conversation_id):
         conversation = get_object_or_404(Conversation, id=conversation_id)
         serializer = ConversationSerializer(conversation)
@@ -247,8 +263,6 @@ class ConversationDetailView(APIView):
 
 
 class ConversationListView(APIView):
-    """GET /api/agent/conversations/ -- list this user's conversations."""
-
     def get(self, request):
         if request.user.is_authenticated:
             conversations = Conversation.objects.filter(owner=request.user)[:50]
@@ -261,8 +275,6 @@ class ConversationListView(APIView):
 
 
 class UploadFileView(APIView):
-    """POST /api/agent/upload/ -- saves uploaded file for read_file tool."""
-
     parser_classes = [MultiPartParser]
 
     def post(self, request):
@@ -284,8 +296,6 @@ class UploadFileView(APIView):
 
 
 class ShareConversationView(APIView):
-    """POST /api/agent/conversations/<id>/share/ -- creates public link."""
-
     def post(self, request, conversation_id):
         conversation = get_object_or_404(Conversation, id=conversation_id)
         conversation.is_shared = True
@@ -295,7 +305,6 @@ class ShareConversationView(APIView):
 
 
 def shared_conversation_view(request, conversation_id):
-    """Public read-only conversation view."""
     conversation = get_object_or_404(Conversation, id=conversation_id, is_shared=True)
     messages_out = []
     for m in conversation.messages.order_by("created_at"):
