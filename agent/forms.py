@@ -42,10 +42,12 @@ class SignupForm(forms.ModelForm):
         name_parts = self.cleaned_data.get("name").strip().split(" ", 1)
         user.first_name = name_parts[0]
         user.last_name = name_parts[1] if len(name_parts) > 1 else ""
-        # Auto-generate username internally from email prefix + unique string
+
         base_username = self.cleaned_data.get("email").split("@")[0]
         user.username = f"{base_username}_{uuid.uuid4().hex[:6]}"
         user.set_password(self.cleaned_data.get("password"))
+        user.is_active = True  # Instantly active so login never blocks
+
         if commit:
             user.save()
         return user
@@ -70,9 +72,7 @@ class CustomLoginForm(forms.Form):
                 raise forms.ValidationError("No account found with this email.")
             self.user_cache = authenticate(username=user.username, password=password)
             if self.user_cache is None:
-                raise forms.ValidationError("Invalid email or password.")
-            elif not self.user_cache.is_active:
-                raise forms.ValidationError("Your account email is not verified yet. Please check your inbox.")
+                raise forms.ValidationError("Invalid password.")
         return cleaned_data
 
     def get_user(self):
