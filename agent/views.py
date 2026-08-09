@@ -49,25 +49,52 @@ def chat_page(request):
 def _send_email_in_background(subject, message, recipient_email):
     """Sends email asynchronously in a separate background thread."""
     try:
+        from_email = getattr(settings, "DEFAULT_FROM_EMAIL", "webmaster@localhost")
         send_mail(
             subject=subject,
             message=message,
-            from_email=getattr(settings, "DEFAULT_FROM_EMAIL", "webmaster@localhost"),
+            from_email=from_email,
             recipient_list=[recipient_email],
-            fail_silently=True,
+            fail_silently=False,
         )
+    except Exception as e:
+        print(f"Email error: {e}")
+
+
+def _send_verification_email(request, user):
+    """Triggers verification email asynchronously."""
+    try:
+        uid = urlsafe_base64_encode(force_bytes(user.pk))
+        token = default_token_generator.make_token(user)
+        site_url = getattr(settings, "SITE_BASE_URL", "https://sd-agent.up.railway.app").rstrip("/")
+        verify_url = f"{site_url}/verify-email/{uid}/{token}/"
+
+        subject = "Verify your email — SD AGENT"
+        message = (
+            f"Hi {user.first_name or user.email},\n\n"
+            f"Thank you for signing up with SD AGENT! Please verify your email by clicking the link below:\n\n"
+            f"{verify_url}\n\n"
+            f"Once verified, you will be automatically logged in to your account.\n\n"
+            f"If you didn't sign up, please ignore this email."
+        )
+
+        thread = threading.Thread(
+            target=_send_email_in_background,
+            args=(subject, message, user.email)
+        )
+        thread.start()
     except Exception:
         pass
 
 
 def _send_welcome_email(user):
-    """Sends Welcome Email to newly registered user."""
+    """Sends Welcome Email after verification."""
     try:
         subject = "Welcome to SD AGENT 🎉"
         message = (
             f"Hi {user.first_name or user.email},\n\n"
-            f"Welcome to SD AGENT! 🎉\n\n"
-            f"Your account is now active. You can chat with your AI agent, search the web, execute code, upload files, and more.\n\n"
+            f"Welcome aboard! 🎉 Your email has been successfully verified.\n\n"
+            f"Your account is now fully active. You can chat with your AI agent, search the web, execute code, upload files, and more.\n\n"
             f"Happy Chatting!\nSD AGENT Team"
         )
         thread = threading.Thread(
@@ -80,23 +107,22 @@ def _send_welcome_email(user):
 
 
 def signup_view(request):
-    """Instant signup and auto-login view."""
-    if request.user.is_authenticated:
-        return redirect("chat-page")
-
+    """Signup requiring email link verification before login."""
+    show_modal = False
+    user_email = ""
     if request.method == "POST":
         form = SignupForm(request.POST)
         if form.is_valid():
             try:
-                user = form.save()
+                user = form.save(commit=False)
+                user.is_active = False  # Inactive until email link is clicked
+                user.save()
 
-                # Auto-login immediately after registration
-                auth_login(request, user)
+                _send_verification_email(request, user)
 
-                # Send Welcome Email in background
-                _send_welcome_email(user)
-
-                return redirect("chat-page")
+                show_modal = True
+                user_email = user.email
+                form = SignupForm()
             except Exception as e:
                 form.add_error(None, f"Signup Error: {str(e)}")
     else:
@@ -104,7 +130,8 @@ def signup_view(request):
 
     return render(request, "registration/signup.html", {
         "form": form,
-        "show_modal": False,
+        "show_modal": show_modal,
+        "user_email": user_email,
     })
 
 
@@ -126,7 +153,7 @@ def login_view(request):
 
 
 def verify_email_view(request, uidb64, token):
-    """Verification link handler."""
+    """Verifies user email, sends Welcome Email, and auto-logins user."""
     try:
         uid = force_str(urlsafe_base64_decode(uidb64))
         user = User.objects.get(pk=uid)
@@ -136,6 +163,7 @@ def verify_email_view(request, uidb64, token):
     if user is not None and default_token_generator.check_token(user, token):
         user.is_active = True
         user.save(update_fields=["is_active"])
+        _send_welcome_email(user)
         auth_login(request, user)
         return redirect("chat-page")
 
