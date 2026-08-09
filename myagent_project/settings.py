@@ -18,7 +18,7 @@ SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY", "dev-only-change-this-in-produc
 DEBUG = os.environ.get("DJANGO_DEBUG", "True") == "True"
 ALLOWED_HOSTS = os.environ.get("DJANGO_ALLOWED_HOSTS", "*").split(",")
 
-# Fix 1: CSRF Trusted Origins for Railway Deployment (Fixes 403 Forbidden Error on Signup/Login)
+# CSRF Trusted Origins for Railway Deployment
 CSRF_TRUSTED_ORIGINS = [
     "https://sd-agent.up.railway.app",
     "https://*.up.railway.app",
@@ -60,7 +60,7 @@ ROOT_URLCONF = "myagent_project.urls"
 
 TEMPLATES = [
     {
-        "BACKEND": "django.template.backends.django.DjangoTemplates",
+        "BACKEND": "django.template.backends.DjangoTemplates",
         "DIRS": [],
         "APP_DIRS": True,
         "OPTIONS": {
@@ -126,7 +126,6 @@ REST_FRAMEWORK = {
 # ---------------------------------------------------------------------------
 GROQ_API_KEY = os.environ.get("GROQ_API_KEY", "")
 
-# Fix 2: Updated to the correct active Groq model
 GROQ_MODEL = os.environ.get("GROQ_MODEL", "llama-3.3-70b-versatile")
 GROQ_BASE_URL = "https://api.groq.com/openai/v1"
 
@@ -150,19 +149,20 @@ MAX_AGENT_TURNS = int(os.environ.get("MAX_AGENT_TURNS", "10"))
 MAX_HISTORY_MESSAGES = int(os.environ.get("MAX_HISTORY_MESSAGES", "8"))
 
 # ---------------------------------------------------------------------------
-# EMAIL
+# EMAIL CONFIGURATION (SMTP FIX)
 # ---------------------------------------------------------------------------
-if os.environ.get("EMAIL_HOST"):
+EMAIL_HOST = os.environ.get("EMAIL_HOST", "smtp.gmail.com")
+EMAIL_PORT = int(os.environ.get("EMAIL_PORT", "587"))
+EMAIL_HOST_USER = os.environ.get("EMAIL_HOST_USER", "")
+EMAIL_HOST_PASSWORD = os.environ.get("EMAIL_HOST_PASSWORD", "")
+EMAIL_USE_TLS = os.environ.get("EMAIL_USE_TLS", "True") == "True"
+
+if EMAIL_HOST_USER and EMAIL_HOST_PASSWORD:
     EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
-    EMAIL_HOST = os.environ.get("EMAIL_HOST")
-    EMAIL_PORT = int(os.environ.get("EMAIL_PORT", "587"))
-    EMAIL_HOST_USER = os.environ.get("EMAIL_HOST_USER", "")
-    EMAIL_HOST_PASSWORD = os.environ.get("EMAIL_HOST_PASSWORD", "")
-    EMAIL_USE_TLS = os.environ.get("EMAIL_USE_TLS", "True") == "True"
 else:
     EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
 
-DEFAULT_FROM_EMAIL = os.environ.get("DEFAULT_FROM_EMAIL", "SD AGENT <no-reply@myagent.local>")
+DEFAULT_FROM_EMAIL = os.environ.get("DEFAULT_FROM_EMAIL", EMAIL_HOST_USER or "SD AGENT <no-reply@sd-agent.up.railway.app>")
 SITE_BASE_URL = os.environ.get("SITE_BASE_URL", "https://sd-agent.up.railway.app")
 
 # ---------------------------------------------------------------------------
