@@ -1,6 +1,5 @@
 import os
 import uuid
-import threading
 
 from django.conf import settings
 from django.shortcuts import get_object_or_404, render, redirect
@@ -14,7 +13,6 @@ from rest_framework.parsers import MultiPartParser
 from .models import Conversation, Message
 from .orchestrator import AgentOrchestrator
 from .serializers import ChatRequestSerializer, ConversationSerializer
-from .forms import SignupForm, CustomLoginForm
 
 FREE_ANON_MESSAGE_LIMIT = 3
 FREE_MESSAGE_LIMIT = 8
@@ -44,51 +42,55 @@ def chat_page(request):
 
 
 def signup_view(request):
-    """Unified Single-Flow Auth and Onboarding view."""
+    """Crash-proof single-flow login & signup handler."""
     if request.user.is_authenticated:
         return redirect("chat-page")
 
+    error = None
     if request.method == "POST":
         email = request.POST.get("email", "").strip().lower()
         password = request.POST.get("password", "").strip()
         full_name = request.POST.get("full_name", "").strip()
 
-        if email and password:
-            user = User.objects.filter(email__iexact=email).first()
-            if user:
-                # Login existing user
-                if user.check_password(password):
-                    auth_login(request, user)
-                    return redirect("chat-page")
+        if not email or not password:
+            error = "Email and password are required."
+        else:
+            try:
+                user = User.objects.filter(email__iexact=email).first()
+                if user:
+                    # User exists -> Check password & Login
+                    if user.check_password(password):
+                        auth_login(request, user)
+                        return redirect("chat-page")
+                    else:
+                        error = "Invalid password for this email address."
                 else:
-                    return render(request, "registration/signup.html", {
-                        "error": "Invalid password for this account."
-                    })
-            else:
-                # Register new user seamlessly
-                base_username = email.split("@")[0]
-                username = f"{base_username}_{uuid.uuid4().hex[:6]}"
-                name_parts = full_name.split(" ", 1) if full_name else [base_username]
-                first_name = name_parts[0]
-                last_name = name_parts[1] if len(name_parts) > 1 else ""
+                    # New user -> Register and Login
+                    base_username = email.split("@")[0]
+                    username = f"{base_username}_{uuid.uuid4().hex[:6]}"
+                    name_parts = full_name.split(" ", 1) if full_name else [base_username]
+                    first_name = name_parts[0]
+                    last_name = name_parts[1] if len(name_parts) > 1 else ""
 
-                user = User.objects.create_user(
-                    username=username,
-                    email=email,
-                    password=password,
-                    first_name=first_name,
-                    last_name=last_name,
-                    is_active=True
-                )
-                auth_login(request, user)
-                return redirect("chat-page")
+                    new_user = User.objects.create_user(
+                        username=username,
+                        email=email,
+                        password=password,
+                        first_name=first_name,
+                        last_name=last_name,
+                        is_active=True
+                    )
+                    auth_login(request, new_user)
+                    return redirect("chat-page")
+            except Exception as e:
+                error = f"Authentication error: {str(e)}"
 
-    return render(request, "registration/signup.html")
+    return render(request, "registration/signup.html", {"error": error})
 
 
 def login_view(request):
-    """Redirect login directly to unified signup/auth page."""
-    return redirect("signup")
+    """Renders signup view directly to avoid redirect loops."""
+    return signup_view(request)
 
 
 class AgentChatView(APIView):
