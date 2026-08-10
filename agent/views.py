@@ -7,7 +7,7 @@ import urllib.parse
 from django.conf import settings
 from django.http import JsonResponse, HttpResponseRedirect
 from django.shortcuts import get_object_or_404, render, redirect
-from django.contrib.auth import login as auth_login
+from django.contrib.auth import login as auth_login, logout as auth_logout
 from django.contrib.auth.models import User
 from django.views.decorators.csrf import csrf_exempt
 from rest_framework.views import APIView
@@ -52,7 +52,7 @@ def google_auth_api(request):
     email = ""
     full_name = ""
 
-    # Handle GET request with access_token or token from Google
+    # Handle GET request with access_token from Google Implicit Flow
     access_token = request.GET.get("access_token")
     if not access_token and request.method == "POST":
         try:
@@ -78,7 +78,6 @@ def google_auth_api(request):
             print("Google UserInfo Error:", e)
 
     if not email:
-        # Fallback render signup if no email could be extracted
         return redirect("signup")
 
     # Get or create User
@@ -157,6 +156,12 @@ def signup_view(request):
 def login_view(request):
     """Renders signup view directly."""
     return signup_view(request)
+
+
+def logout_view(request):
+    """Logs out the user and redirects back to signup page."""
+    auth_logout(request)
+    return redirect("signup")
 
 
 def verify_email_view(request, uidb64, token):
