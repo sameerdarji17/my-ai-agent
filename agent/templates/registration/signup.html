@@ -1,145 +1,196 @@
-<!DOCTYPE html>
 {% load static %}
-
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Sign Up — SD AGENT</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Create your account — SD AGENT</title>
+    <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
     <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-        body { background: #f4f6f9; display: flex; align-items: center; justify-content: center; min-height: 100vh; padding: 20px; position: relative; }
-        .back-nav { position: absolute; top: 20px; left: 20px; }
-        .back-nav a { text-decoration: none; color: #6366f1; font-weight: 600; font-size: 14px; display: flex; align-items: center; gap: 6px; background: #ffffff; padding: 8px 14px; border-radius: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
-        .back-nav a:hover { background: #eef2ff; }
-        .card { background: white; width: 100%; max-width: 420px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); padding: 30px; }
-        h2 { text-align: center; color: #333; margin-bottom: 20px; font-size: 24px; }
-        .form-group { margin-bottom: 18px; position: relative; }
-        label { display: block; margin-bottom: 6px; color: #555; font-size: 14px; font-weight: 600; }
-        .input-wrapper { position: relative; display: flex; align-items: center; }
-        .form-control { width: 100%; padding: 12px 40px 12px 14px; border: 1px solid #ccc; border-radius: 8px; font-size: 14px; outline: none; transition: 0.2s; }
-        .form-control:focus { border-color: #6366f1; box-shadow: 0 0 0 3px rgba(99,102,241,0.15); }
-        .toggle-pwd { position: absolute; right: 12px; cursor: pointer; user-select: none; font-size: 16px; opacity: 0.6; }
-        .match-badge { position: absolute; right: 36px; font-size: 16px; display: none; }
-        .btn { width: 100%; padding: 12px; background: #6366f1; color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; transition: 0.2s; margin-top: 10px; }
-        .btn:hover { background: #4f46e5; }
-        .links { margin-top: 20px; text-align: center; font-size: 14px; color: #666; }
-        .links a { color: #6366f1; text-decoration: none; font-weight: 600; }
-        .error-list { background: #fee2e2; border: 1px solid #f87171; color: #dc2626; padding: 10px; border-radius: 8px; font-size: 13px; margin-bottom: 15px; }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; }
+        body { background: #FAF8F5; color: #1F1E1C; min-height: 100vh; display: flex; flex-direction: column; }
 
-        .modal-overlay { position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 1000; }
-        .modal-box { background: white; padding: 30px; border-radius: 12px; text-align: center; max-width: 380px; width: 90%; animation: popIn 0.3s ease-out; }
-        @keyframes popIn { from { transform: scale(0.8); opacity:0; } to { transform: scale(1); opacity:1; } }
-        .modal-box h3 { color: #10b981; margin-bottom: 10px; font-size: 20px; }
-        .modal-box p { color: #4b5563; font-size: 14px; line-height: 1.5; margin-bottom: 20px; }
-        .modal-box .close-btn { background: #10b981; color: white; border:none; padding: 10px 20px; border-radius: 6px; font-weight: bold; cursor: pointer; }
+        .header { padding: 24px; text-align: center; }
+        .logo { font-family: 'Instrument Serif', serif; font-size: 28px; text-decoration: none; color: #1F1E1C; }
+        .logo-icon { color: #D97757; }
+
+        .container { flex: 1; display: flex; align-items: center; justify-content: center; padding: 20px; }
+        .step-box { width: 100%; max-width: 520px; display: none; text-align: center; animation: fadeIn 0.3s ease-in-out; }
+        .step-box.active { display: block; }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+
+        .title { font-family: 'Instrument Serif', serif; font-size: 40px; font-weight: 400; margin-bottom: 8px; }
+        .subtitle { font-size: 15px; color: #6B6966; margin-bottom: 28px; }
+
+        .card { background: #FFFFFF; border: 1px solid #E6E4E0; border-radius: 20px; padding: 28px; text-align: left; box-shadow: 0 4px 20px rgba(0,0,0,0.02); }
+
+        /* Step 1 Form Controls */
+        .form-group { margin-bottom: 16px; }
+        label { display: block; font-size: 13px; font-weight: 600; color: #4A4845; margin-bottom: 6px; }
+        .form-control { width: 100%; padding: 12px 14px; border: 1px solid #E6E4E0; border-radius: 10px; font-size: 15px; outline: none; background: #FAF8F5; }
+        .form-control:focus { border-color: #1F1E1C; background: #FFFFFF; }
+
+        /* Step 2 Terms Checkbox */
+        .checkbox-group { display: flex; gap: 12px; margin-bottom: 18px; align-items: flex-start; }
+        .checkbox-group input { margin-top: 3px; accent-color: #1F1E1C; width: 16px; height: 16px; }
+        .checkbox-group label { font-size: 14px; color: #4A4845; font-weight: 400; line-height: 1.4; }
+
+        /* Step 3 Plans */
+        .plans-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 16px; margin-bottom: 24px; }
+        .plan-card { border: 1px solid #E6E4E0; border-radius: 16px; padding: 20px; text-align: left; cursor: pointer; transition: 0.2s; }
+        .plan-card:hover, .plan-card.selected { border-color: #1F1E1C; background: #FAF8F5; }
+        .plan-title { font-size: 18px; font-weight: 600; margin-bottom: 4px; }
+        .plan-price { font-size: 22px; font-weight: 700; margin-bottom: 8px; }
+
+        /* Step 4 Topic Buttons */
+        .topic-btn { width: 100%; padding: 16px; background: #FFFFFF; border: 1px solid #E6E4E0; border-radius: 12px; text-align: left; font-size: 15px; font-weight: 500; cursor: pointer; margin-bottom: 12px; display: flex; align-items: center; gap: 12px; transition: 0.2s; }
+        .topic-btn:hover { border-color: #1F1E1C; background: #FAF8F5; }
+
+        /* Buttons */
+        .btn-primary { width: 100%; padding: 14px; background: #1F1E1C; color: #FFFFFF; border: none; border-radius: 12px; font-size: 15px; font-weight: 500; cursor: pointer; margin-top: 10px; }
+        .btn-primary:hover { background: #383734; }
+        .link-sub { display: inline-block; margin-top: 16px; font-size: 14px; color: #6B6966; text-decoration: none; cursor: pointer; }
+        .link-sub:hover { color: #1F1E1C; }
     </style>
 </head>
 <body>
 
-<div class="back-nav">
-    <a href="{% url 'chat-page' %}">← Back to Chat</a>
-</div>
+<header class="header">
+    <a href="{% url 'chat-page' %}" class="logo"><span class="logo-icon">✴</span> SD AGENT</a>
+</header>
 
-<div class="card">
-    <h2>Create Account</h2>
+<main class="container">
 
-    {% if form.errors %}
-        <div class="error-list">
-            {% for field in form %}
-                {% for error in field.errors %}
-                    <p>{{ error }}</p>
-                {% endfor %}
-            {% endfor %}
-            {% for error in form.non_field_errors %}
-                <p>{{ error }}</p>
-            {% endfor %}
+    <!-- STEP 1: Account Details -->
+    <div class="step-box active" id="step-1">
+        <h1 class="title">Create your account</h1>
+        <p class="subtitle">Start chatting with SD AGENT today</p>
+        <div class="card">
+            <form method="post" id="signupForm">
+                {% csrf_token %}
+                <div class="form-group">
+                    <label>Full Name</label>
+                    {{ form.name }}
+                </div>
+                <div class="form-group">
+                    <label>Email Address</label>
+                    {{ form.email }}
+                </div>
+                <div class="form-group">
+                    <label>Password</label>
+                    {{ form.password }}
+                </div>
+                <div class="form-group">
+                    <label>Confirm Password</label>
+                    {{ form.confirm_password }}
+                </div>
+                <button type="button" class="btn-primary" onclick="nextStep(2)">Continue</button>
+            </form>
         </div>
-    {% endif %}
+    </div>
 
-    <form method="post" id="signupForm">
-        {% csrf_token %}
-        <div class="form-group">
-            <label>Full Name</label>
-            {{ form.name }}
+    <!-- STEP 2: Terms & Consent -->
+    <div class="step-box" id="step-2">
+        <h1 class="title">Let's create your account</h1>
+        <p class="subtitle">A few things for you to review</p>
+        <div class="card">
+            <div class="checkbox-group">
+                <input type="checkbox" id="terms" checked>
+                <label for="terms">I agree to SD AGENT's Consumer Terms and Use Policy and confirm that I am at least 18 years of age.</label>
+            </div>
+            <div class="checkbox-group">
+                <input type="checkbox" id="privacy" checked>
+                <label for="privacy">I consent to collection and use of my personal information in accordance with the Privacy Policy.</label>
+            </div>
+            <div class="checkbox-group">
+                <input type="checkbox" id="promo">
+                <label for="promo">Subscribe to occasional product updates and notifications.</label>
+            </div>
+            <button type="button" class="btn-primary" onclick="submitRealForm()">Create account</button>
         </div>
+    </div>
 
-        <div class="form-group">
-            <label>Email Address</label>
-            {{ form.email }}
-        </div>
-
-        <div class="form-group">
-            <label>Password</label>
-            <div class="input-wrapper">
-                {{ form.password }}
-                <span class="toggle-pwd" onclick="togglePassword('id_password', this)">👁️</span>
+    <!-- STEP 3: Select Plan -->
+    <div class="step-box" id="step-3">
+        <h1 class="title">Plans that grow with you</h1>
+        <p class="subtitle">Choose a plan to continue</p>
+        <div class="plans-grid">
+            <div class="plan-card selected">
+                <div class="plan-title">Free</div>
+                <div class="plan-price">₹0</div>
+                <p style="font-size: 13px; color:#6B6966;">Meet SD AGENT</p>
+            </div>
+            <div class="plan-card">
+                <div class="plan-title">Pro</div>
+                <div class="plan-price">₹2,000</div>
+                <p style="font-size: 13px; color:#6B6966;">Research & code</p>
             </div>
         </div>
+        <button type="button" class="btn-primary" onclick="nextStep(4)">Use SD AGENT for free</button>
+    </div>
 
-        <div class="form-group">
-            <label>Confirm Password</label>
-            <div class="input-wrapper">
-                {{ form.confirm_password }}
-                <span class="match-badge" id="matchBadge"></span>
-                <span class="toggle-pwd" onclick="togglePassword('id_confirm_password', this)">👁️</span>
+    <!-- STEP 4: What's your name? -->
+    <div class="step-box" id="step-4">
+        <h1 class="title">What's your name?</h1>
+        <p class="subtitle">So SD AGENT knows what to call you.</p>
+        <div class="card">
+            <input type="text" class="form-control" id="disp-name" placeholder="Enter your name" value="{{ user.first_name|default:'' }}">
+            <button type="button" class="btn-primary" onclick="nextStep(5)">Continue</button>
+        </div>
+    </div>
+
+    <!-- STEP 5: What kind of work do you do? -->
+    <div class="step-box" id="step-5">
+        <h1 class="title">What kind of work do you do?</h1>
+        <p class="subtitle">Pick a role so SD AGENT can tailor your experience.</p>
+        <div class="card">
+            <select class="form-control" style="margin-bottom: 20px;">
+                <option>Software engineer</option>
+                <option>Product management</option>
+                <option>Student / Research</option>
+                <option>Data science</option>
+            </select>
+            <button type="button" class="btn-primary" onclick="nextStep(6)">Continue</button>
+            <div style="text-align: center;">
+                <span class="link-sub" onclick="nextStep(6)">Set up later</span>
             </div>
         </div>
-
-        <button type="submit" class="btn">Sign Up</button>
-    </form>
-
-    <div class="links">
-        Already have an account? <a href="{% url 'login' %}">Log In</a>
     </div>
-</div>
 
-{% if show_modal %}
-<div class="modal-overlay">
-    <div class="modal-box">
-        <h3>🎉 Link Sent to Mail!</h3>
-        <p>We have sent a verification link to <strong>{{ user_email }}</strong>.<br><br>Please check your inbox, click the link to verify your account, and you will be automatically logged in.</p>
-        <button class="close-btn" data-url="{% url 'login' %}" onclick="window.location.href=this.dataset.url">OK, Got It</button>
+    <!-- STEP 6: Starter Suggestions -->
+    <div class="step-box" id="step-6">
+        <h1 class="title">What kind of work do you do?</h1>
+        <p class="subtitle">Software engineer suggestions</p>
+        <button type="button" class="topic-btn" onclick="finishOnboarding('Design a system with me')">
+            <span>⚙️</span> Design a system with me
+        </button>
+        <button type="button" class="topic-btn" onclick="finishOnboarding('Build a working prototype')">
+            <span>💻</span> Build a working prototype
+        </button>
+        <button type="button" class="topic-btn" onclick="finishOnboarding('Generate realistic test data')">
+            <span>📊</span> Generate realistic test data
+        </button>
+        <div style="text-align: center; margin-top: 12px;">
+            <span class="link-sub" onclick="finishOnboarding('')">I have my own topic</span>
+        </div>
     </div>
-</div>
-{% endif %}
+
+</main>
 
 <script>
-    function togglePassword(inputId, btn) {
-        const input = document.getElementById(inputId);
-        if (input && input.type === "password") {
-            input.type = "text";
-            btn.textContent = "🙈";
-        } else if (input) {
-            input.type = "password";
-            btn.textContent = "👁️";
-        }
+    function nextStep(stepNum) {
+        document.querySelectorAll('.step-box').forEach(el => el.classList.remove('active'));
+        document.getElementById('step-' + stepNum).classList.add('active');
     }
 
-    const pwd = document.getElementById('id_password');
-    const confirmPwd = document.getElementById('id_confirm_password');
-    const badge = document.getElementById('matchBadge');
-
-    function checkMatch() {
-        if (!badge) return;
-        if (!confirmPwd || !confirmPwd.value) {
-            badge.style.display = 'none';
-            return;
-        }
-        if (pwd && pwd.value === confirmPwd.value) {
-            badge.textContent = '🟢';
-            badge.title = 'Passwords match!';
-            badge.style.display = 'inline';
-        } else {
-            badge.textContent = '🔴';
-            badge.title = 'Passwords do not match!';
-            badge.style.display = 'inline';
-        }
+    function submitRealForm() {
+        // Submits Django Signup Form
+        document.getElementById('signupForm').submit();
     }
 
-    if (pwd && confirmPwd) {
-        pwd.addEventListener('input', checkMatch);
-        confirmPwd.addEventListener('input', checkMatch);
+    function finishOnboarding(topic) {
+        window.location.href = "{% url 'chat-page' %}";
     }
 </script>
 
