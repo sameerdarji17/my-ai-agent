@@ -1,7 +1,8 @@
 import os
 import json
 import uuid
-import base64
+import urllib.request
+import urllib.parse
 
 from django.conf import settings
 from django.http import JsonResponse, HttpResponseRedirect
@@ -21,20 +22,6 @@ from .serializers import ChatRequestSerializer, ConversationSerializer
 FREE_ANON_MESSAGE_LIMIT = 3
 FREE_MESSAGE_LIMIT = 8
 FREE_WINDOW_HOURS = 5
-
-
-def _decode_google_jwt(credential_jwt):
-    """Safely decodes Google ID Token JWT without external libraries."""
-    try:
-        parts = credential_jwt.split(".")
-        if len(parts) != 3:
-            return None
-        padding = "=" * (4 - len(parts[1]) % 4)
-        payload_b64 = parts[1] + padding
-        decoded_bytes = base64.urlsafe_b64decode(payload_b64)
-        return json.loads(decoded_bytes.decode("utf-8"))
-    except Exception:
-        return None
 
 
 def chat_page(request):
@@ -61,31 +48,37 @@ def chat_page(request):
 
 @csrf_exempt
 def google_auth_api(request):
-    """Handles both Form POST and JSON POST from Google Identity Services."""
-    if request.method != "POST":
-        return redirect("signup")
-
+    """Universal Google OAuth Login Handler."""
     email = ""
     full_name = ""
 
-    # 1. Direct Form POST from Google login_uri
-    credential = request.POST.get("credential")
-    if credential:
-        jwt_data = _decode_google_jwt(credential)
-        if jwt_data and "email" in jwt_data:
-            email = jwt_data["email"].strip().lower()
-            full_name = jwt_data.get("name", "").strip()
-
-    # 2. JSON POST fallback
-    if not email and request.body:
+    # Handle GET request with access_token or token from Google
+    access_token = request.GET.get("access_token")
+    if not access_token and request.method == "POST":
         try:
-            data = json.loads(request.body.decode("utf-8"))
-            email = data.get("email", "").strip().lower()
-            full_name = data.get("name", "").strip()
+            body_data = json.loads(request.body.decode("utf-8"))
+            access_token = body_data.get("access_token")
+            email = body_data.get("email", "").strip().lower()
+            full_name = body_data.get("name", "").strip()
         except Exception:
             pass
 
+    # Fetch User Info from Google if access_token is provided
+    if access_token and not email:
+        try:
+            req = urllib.request.Request(
+                "https://www.googleapis.com/oauth2/v3/userinfo",
+                headers={"Authorization": f"Bearer {access_token}"}
+            )
+            with urllib.request.urlopen(req) as response:
+                user_info = json.loads(response.read().decode("utf-8"))
+                email = user_info.get("email", "").strip().lower()
+                full_name = user_info.get("name", "").strip()
+        except Exception as e:
+            print("Google UserInfo Error:", e)
+
     if not email:
+        # Fallback render signup if no email could be extracted
         return redirect("signup")
 
     # Get or create User
@@ -106,11 +99,10 @@ def google_auth_api(request):
             is_active=True
         )
 
-    # Log in user
+    # Perform Session Login
     auth_login(request, user, backend='django.contrib.auth.backends.ModelBackend')
     request.session.save()
 
-    # If it was AJAX request
     if request.headers.get("X-Requested-With") == "XMLHttpRequest" or "application/json" in request.META.get("HTTP_ACCEPT", ""):
         return JsonResponse({"status": "ok", "redirect_url": "/"})
 
@@ -118,7 +110,7 @@ def google_auth_api(request):
 
 
 def signup_view(request):
-    """Single-Flow Authentication View."""
+    """Single-Flow Email Authentication."""
     if request.user.is_authenticated:
         return redirect("chat-page")
 
