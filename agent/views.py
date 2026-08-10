@@ -42,7 +42,7 @@ def chat_page(request):
 
 
 def signup_view(request):
-    """Crash-proof single-flow login & signup handler."""
+    """Unified Single-Flow Auth and Onboarding view."""
     if request.user.is_authenticated:
         return redirect("chat-page")
 
@@ -89,7 +89,7 @@ def signup_view(request):
 
 
 def login_view(request):
-    """Renders signup view directly to avoid redirect loops."""
+    """Renders signup template directly."""
     return signup_view(request)
 
 
