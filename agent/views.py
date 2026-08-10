@@ -89,8 +89,13 @@ def signup_view(request):
 
 
 def login_view(request):
-    """Renders signup template directly."""
+    """Renders signup view directly."""
     return signup_view(request)
+
+
+def verify_email_view(request, uidb64, token):
+    """Fallback view for verify-email URL route."""
+    return redirect("chat-page")
 
 
 class AgentChatView(APIView):
