@@ -1,9 +1,10 @@
 import os
 import json
 import uuid
+import base64
 
 from django.conf import settings
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponseRedirect
 from django.shortcuts import get_object_or_404, render, redirect
 from django.contrib.auth import login as auth_login
 from django.contrib.auth.models import User
@@ -20,6 +21,20 @@ from .serializers import ChatRequestSerializer, ConversationSerializer
 FREE_ANON_MESSAGE_LIMIT = 3
 FREE_MESSAGE_LIMIT = 8
 FREE_WINDOW_HOURS = 5
+
+
+def _decode_google_jwt(credential_jwt):
+    """Safely decodes Google ID Token JWT without external libraries."""
+    try:
+        parts = credential_jwt.split(".")
+        if len(parts) != 3:
+            return None
+        padding = "=" * (4 - len(parts[1]) % 4)
+        payload_b64 = parts[1] + padding
+        decoded_bytes = base64.urlsafe_b64decode(payload_b64)
+        return json.loads(decoded_bytes.decode("utf-8"))
+    except Exception:
+        return None
 
 
 def chat_page(request):
@@ -46,44 +61,64 @@ def chat_page(request):
 
 @csrf_exempt
 def google_auth_api(request):
-    """Direct API handler for Google OAuth login and registration."""
+    """Handles both Form POST and JSON POST from Google Identity Services."""
     if request.method != "POST":
-        return JsonResponse({"error": "Invalid request method"}, status=405)
+        return redirect("signup")
 
-    try:
-        data = json.loads(request.body.decode("utf-8"))
-        email = data.get("email", "").strip().lower()
-        full_name = data.get("name", "").strip()
+    email = ""
+    full_name = ""
 
-        if not email:
-            return JsonResponse({"error": "No email received from Google"}, status=400)
+    # 1. Direct Form POST from Google login_uri
+    credential = request.POST.get("credential")
+    if credential:
+        jwt_data = _decode_google_jwt(credential)
+        if jwt_data and "email" in jwt_data:
+            email = jwt_data["email"].strip().lower()
+            full_name = jwt_data.get("name", "").strip()
 
-        user = User.objects.filter(email__iexact=email).first()
-        if not user:
-            base_username = email.split("@")[0]
-            username = f"{base_username}_{uuid.uuid4().hex[:6]}"
-            name_parts = full_name.split(" ", 1) if full_name else [base_username]
-            first_name = name_parts[0]
-            last_name = name_parts[1] if len(name_parts) > 1 else ""
+    # 2. JSON POST fallback
+    if not email and request.body:
+        try:
+            data = json.loads(request.body.decode("utf-8"))
+            email = data.get("email", "").strip().lower()
+            full_name = data.get("name", "").strip()
+        except Exception:
+            pass
 
-            user = User.objects.create_user(
-                username=username,
-                email=email,
-                password=User.objects.make_random_password(),
-                first_name=first_name,
-                last_name=last_name,
-                is_active=True
-            )
+    if not email:
+        return redirect("signup")
 
-        auth_login(request, user, backend='django.contrib.auth.backends.ModelBackend')
-        request.session.save()
+    # Get or create User
+    user = User.objects.filter(email__iexact=email).first()
+    if not user:
+        base_username = email.split("@")[0]
+        username = f"{base_username}_{uuid.uuid4().hex[:6]}"
+        name_parts = full_name.split(" ", 1) if full_name else [base_username]
+        first_name = name_parts[0]
+        last_name = name_parts[1] if len(name_parts) > 1 else ""
+
+        user = User.objects.create_user(
+            username=username,
+            email=email,
+            password=User.objects.make_random_password(),
+            first_name=first_name,
+            last_name=last_name,
+            is_active=True
+        )
+
+    # Log in user
+    auth_login(request, user, backend='django.contrib.auth.backends.ModelBackend')
+    request.session.save()
+
+    # If it was AJAX request
+    if request.headers.get("X-Requested-With") == "XMLHttpRequest" or "application/json" in request.META.get("HTTP_ACCEPT", ""):
         return JsonResponse({"status": "ok", "redirect_url": "/"})
-    except Exception as e:
-        return JsonResponse({"error": str(e)}, status=500)
+
+    return HttpResponseRedirect("/")
 
 
 def signup_view(request):
-    """Single-Flow Email Authentication."""
+    """Single-Flow Authentication View."""
     if request.user.is_authenticated:
         return redirect("chat-page")
 
