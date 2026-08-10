@@ -1,10 +1,13 @@
 import os
+import json
 import uuid
 
 from django.conf import settings
+from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, render, redirect
 from django.contrib.auth import login as auth_login
 from django.contrib.auth.models import User
+from django.views.decorators.csrf import csrf_exempt
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
@@ -41,8 +44,46 @@ def chat_page(request):
     )
 
 
+@csrf_exempt
+def google_auth_api(request):
+    """Direct API handler for Google OAuth login and registration."""
+    if request.method != "POST":
+        return JsonResponse({"error": "Invalid request method"}, status=405)
+
+    try:
+        data = json.loads(request.body.decode("utf-8"))
+        email = data.get("email", "").strip().lower()
+        full_name = data.get("name", "").strip()
+
+        if not email:
+            return JsonResponse({"error": "No email received from Google"}, status=400)
+
+        user = User.objects.filter(email__iexact=email).first()
+        if not user:
+            base_username = email.split("@")[0]
+            username = f"{base_username}_{uuid.uuid4().hex[:6]}"
+            name_parts = full_name.split(" ", 1) if full_name else [base_username]
+            first_name = name_parts[0]
+            last_name = name_parts[1] if len(name_parts) > 1 else ""
+
+            user = User.objects.create_user(
+                username=username,
+                email=email,
+                password=User.objects.make_random_password(),
+                first_name=first_name,
+                last_name=last_name,
+                is_active=True
+            )
+
+        auth_login(request, user, backend='django.contrib.auth.backends.ModelBackend')
+        request.session.save()
+        return JsonResponse({"status": "ok", "redirect_url": "/"})
+    except Exception as e:
+        return JsonResponse({"error": str(e)}, status=500)
+
+
 def signup_view(request):
-    """Seamless Single-Flow Google & Email Authentication."""
+    """Single-Flow Email Authentication."""
     if request.user.is_authenticated:
         return redirect("chat-page")
 
@@ -52,34 +93,23 @@ def signup_view(request):
         password = request.POST.get("password", "").strip()
         full_name = request.POST.get("full_name", "").strip()
 
-        if not email:
-            error = "Email is required."
+        if not email or not password:
+            error = "Email and password are required."
         else:
             try:
-                # Check if user already exists
                 user = User.objects.filter(email__iexact=email).first()
                 if user:
-                    # Check password for regular email login
-                    if password and not password.startswith("GoogleAuth_"):
-                        if user.check_password(password):
-                            auth_login(request, user, backend='django.contrib.auth.backends.ModelBackend')
-                            return redirect("chat-page")
-                        else:
-                            error = "Invalid password for this email address."
-                    else:
-                        # Direct Google Sign-In for existing user
+                    if user.check_password(password):
                         auth_login(request, user, backend='django.contrib.auth.backends.ModelBackend')
                         return redirect("chat-page")
+                    else:
+                        error = "Invalid password for this email address."
                 else:
-                    # Create new user for both Google and Email registration
                     base_username = email.split("@")[0]
                     username = f"{base_username}_{uuid.uuid4().hex[:6]}"
                     name_parts = full_name.split(" ", 1) if full_name else [base_username]
                     first_name = name_parts[0]
                     last_name = name_parts[1] if len(name_parts) > 1 else ""
-
-                    if not password:
-                        password = User.objects.make_random_password()
 
                     new_user = User.objects.create_user(
                         username=username,
