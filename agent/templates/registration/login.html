@@ -11,8 +11,9 @@
         body { background: #FAF8F5; color: #1F1E1C; min-height: 100vh; display: flex; flex-direction: column; }
 
         .header { padding: 24px 32px; display: flex; align-items: center; justify-content: space-between; }
-        .logo { font-family: 'Instrument Serif', serif; font-size: 28px; font-weight: 500; text-decoration: none; color: #1F1E1C; display: flex; align-items: center; gap: 8px; }
-        .logo-icon { color: #D97757; }
+        .logo { font-family: 'Instrument Serif', serif; font-size: 26px; font-weight: 600; text-decoration: none; color: #1F1E1C; display: flex; align-items: center; gap: 10px; }
+        .logo-mark { width: 32px; height: 32px; border-radius: 8px; overflow: hidden; display: flex; align-items: center; justify-content: center; }
+        .logo-mark svg { width: 100%; height: 100%; display: block; }
 
         .container { flex: 1; display: flex; align-items: center; justify-content: center; padding: 20px; gap: 60px; max-width: 1200px; margin: 0 auto; width: 100%; }
 
@@ -30,7 +31,7 @@
         .divider span { padding: 0 12px; }
 
         .form-group { margin-bottom: 16px; }
-        .form-control { width: 100%; padding: 14px 16px; border: 1px solid #E6E4E0; border-radius: 12px; font-size: 15px; outline: none; background: #FAF8F5; transition: 0.2s; }
+        .form-control { width: 100%; padding: 14px 16px; border: 1px solid #E6E4E0; border-radius: 12px; font-size: 15px; outline: none; background: #FAF8F5; transition: 0.2s; color: #1F1E1C; }
         .form-control:focus { border-color: #1F1E1C; background: #FFFFFF; }
 
         .btn-primary { width: 100%; padding: 14px; background: #1F1E1C; color: #FFFFFF; border: none; border-radius: 12px; font-size: 15px; font-weight: 500; cursor: pointer; transition: 0.2s; }
@@ -50,7 +51,10 @@
 
 <header class="header">
     <a href="{% url 'chat-page' %}" class="logo">
-        <span class="logo-icon">✴</span> SD AGENT
+        <div class="logo-mark">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" rx="24" fill="#101118"/><path d="M44 32C34 32 29 36 29 42C29 47 35 49 39 50C44 51 50 52 50 58C50 64 44 68 33 68" fill="none" stroke="#9BA1FF" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/><path d="M47 31L47 69M47 31C64 31 73 40 73 50C73 60 64 69 47 69" fill="none" stroke="#7C83FD" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </div>
+        SD AGENT
     </a>
 </header>
 
