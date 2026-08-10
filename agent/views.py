@@ -1,14 +1,11 @@
 import os
+import uuid
 import threading
 
 from django.conf import settings
 from django.shortcuts import get_object_or_404, render, redirect
 from django.contrib.auth import login as auth_login
 from django.contrib.auth.models import User
-from django.contrib.auth.tokens import default_token_generator
-from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
-from django.utils.encoding import force_bytes, force_str
-from django.core.mail import send_mail
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
@@ -46,103 +43,52 @@ def chat_page(request):
     )
 
 
-def _send_email_in_background(subject, message, recipient_email):
-    """Sends email asynchronously without blocking or crashing execution."""
-    try:
-        from_email = getattr(settings, "DEFAULT_FROM_EMAIL", "webmaster@localhost")
-        send_mail(
-            subject=subject,
-            message=message,
-            from_email=from_email,
-            recipient_list=[recipient_email],
-            fail_silently=True,
-        )
-    except Exception:
-        pass
-
-
-def _send_welcome_email(user):
-    """Sends Welcome Email to newly registered user."""
-    try:
-        subject = "Welcome to SD AGENT 🎉"
-        message = (
-            f"Hi {user.first_name or user.email},\n\n"
-            f"Welcome to SD AGENT! 🎉\n\n"
-            f"Your account is now active. You can chat with your AI agent, search the web, execute code, upload files, and more.\n\n"
-            f"Happy Chatting!\nSD AGENT Team"
-        )
-        thread = threading.Thread(
-            target=_send_email_in_background,
-            args=(subject, message, user.email)
-        )
-        thread.start()
-    except Exception:
-        pass
-
-
 def signup_view(request):
-    """Instant signup and auto-login view to guarantee zero login blocks."""
+    """Unified Single-Flow Auth and Onboarding view."""
     if request.user.is_authenticated:
         return redirect("chat-page")
 
     if request.method == "POST":
-        form = SignupForm(request.POST)
-        if form.is_valid():
-            try:
-                user = form.save(commit=False)
-                user.is_active = True  # Instantly active so login never blocks
-                user.save()
+        email = request.POST.get("email", "").strip().lower()
+        password = request.POST.get("password", "").strip()
+        full_name = request.POST.get("full_name", "").strip()
 
-                # Auto-login immediately after registration
+        if email and password:
+            user = User.objects.filter(email__iexact=email).first()
+            if user:
+                # Login existing user
+                if user.check_password(password):
+                    auth_login(request, user)
+                    return redirect("chat-page")
+                else:
+                    return render(request, "registration/signup.html", {
+                        "error": "Invalid password for this account."
+                    })
+            else:
+                # Register new user seamlessly
+                base_username = email.split("@")[0]
+                username = f"{base_username}_{uuid.uuid4().hex[:6]}"
+                name_parts = full_name.split(" ", 1) if full_name else [base_username]
+                first_name = name_parts[0]
+                last_name = name_parts[1] if len(name_parts) > 1 else ""
+
+                user = User.objects.create_user(
+                    username=username,
+                    email=email,
+                    password=password,
+                    first_name=first_name,
+                    last_name=last_name,
+                    is_active=True
+                )
                 auth_login(request, user)
-
-                # Send Welcome Email in background
-                _send_welcome_email(user)
-
                 return redirect("chat-page")
-            except Exception as e:
-                form.add_error(None, f"Signup Error: {str(e)}")
-    else:
-        form = SignupForm()
 
-    return render(request, "registration/signup.html", {
-        "form": form,
-        "show_modal": False,
-    })
+    return render(request, "registration/signup.html")
 
 
 def login_view(request):
-    """Login view using Email and Password."""
-    if request.user.is_authenticated:
-        return redirect("chat-page")
-
-    if request.method == "POST":
-        form = CustomLoginForm(request.POST)
-        if form.is_valid():
-            user = form.get_user()
-            auth_login(request, user)
-            return redirect("chat-page")
-    else:
-        form = CustomLoginForm()
-
-    return render(request, "registration/login.html", {"form": form})
-
-
-def verify_email_view(request, uidb64, token):
-    """Fallback email verification handler."""
-    try:
-        uid = force_str(urlsafe_base64_decode(uidb64))
-        user = User.objects.get(pk=uid)
-    except (TypeError, ValueError, OverflowError, User.DoesNotExist):
-        user = None
-
-    if user is not None and default_token_generator.check_token(user, token):
-        user.is_active = True
-        user.save(update_fields=["is_active"])
-        auth_login(request, user)
-        return redirect("chat-page")
-
-    return render(request, "registration/verify_failed.html")
+    """Redirect login directly to unified signup/auth page."""
+    return redirect("signup")
 
 
 class AgentChatView(APIView):
