@@ -59,16 +59,16 @@ def signup_view(request):
                 # Check if user already exists
                 user = User.objects.filter(email__iexact=email).first()
                 if user:
-                    # If password provided, check it. If coming from Google Auth, bypass password check
+                    # Check password for regular email login
                     if password and not password.startswith("GoogleAuth_"):
                         if user.check_password(password):
-                            auth_login(request, user)
+                            auth_login(request, user, backend='django.contrib.auth.backends.ModelBackend')
                             return redirect("chat-page")
                         else:
                             error = "Invalid password for this email address."
                     else:
                         # Direct Google Sign-In for existing user
-                        auth_login(request, user)
+                        auth_login(request, user, backend='django.contrib.auth.backends.ModelBackend')
                         return redirect("chat-page")
                 else:
                     # Create new user for both Google and Email registration
@@ -89,7 +89,7 @@ def signup_view(request):
                         last_name=last_name,
                         is_active=True
                     )
-                    auth_login(request, new_user)
+                    auth_login(request, new_user, backend='django.contrib.auth.backends.ModelBackend')
                     return redirect("chat-page")
             except Exception as e:
                 error = f"Authentication error: {str(e)}"
