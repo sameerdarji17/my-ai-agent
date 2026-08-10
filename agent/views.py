@@ -42,7 +42,7 @@ def chat_page(request):
 
 
 def signup_view(request):
-    """Unified Single-Flow Auth and Onboarding view."""
+    """Seamless Single-Flow Google & Email Authentication."""
     if request.user.is_authenticated:
         return redirect("chat-page")
 
@@ -52,25 +52,34 @@ def signup_view(request):
         password = request.POST.get("password", "").strip()
         full_name = request.POST.get("full_name", "").strip()
 
-        if not email or not password:
-            error = "Email and password are required."
+        if not email:
+            error = "Email is required."
         else:
             try:
+                # Check if user already exists
                 user = User.objects.filter(email__iexact=email).first()
                 if user:
-                    # User exists -> Check password & Login
-                    if user.check_password(password):
+                    # If password provided, check it. If coming from Google Auth, bypass password check
+                    if password and not password.startswith("GoogleAuth_"):
+                        if user.check_password(password):
+                            auth_login(request, user)
+                            return redirect("chat-page")
+                        else:
+                            error = "Invalid password for this email address."
+                    else:
+                        # Direct Google Sign-In for existing user
                         auth_login(request, user)
                         return redirect("chat-page")
-                    else:
-                        error = "Invalid password for this email address."
                 else:
-                    # New user -> Register and Login
+                    # Create new user for both Google and Email registration
                     base_username = email.split("@")[0]
                     username = f"{base_username}_{uuid.uuid4().hex[:6]}"
                     name_parts = full_name.split(" ", 1) if full_name else [base_username]
                     first_name = name_parts[0]
                     last_name = name_parts[1] if len(name_parts) > 1 else ""
+
+                    if not password:
+                        password = User.objects.make_random_password()
 
                     new_user = User.objects.create_user(
                         username=username,
