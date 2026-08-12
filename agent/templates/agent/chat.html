@@ -12,21 +12,12 @@
         :root {
             --bg-color: #F8FAF9;
             --sidebar-bg: #EFEFEA;
-            --card-bg: #FFFFFF;
             --text-main: #18181B;
             --text-muted: #71717A;
-            --accent-purple: #6366F1;
             --border-color: #E4E4E7;
         }
 
-        body {
-            background: var(--bg-color);
-            color: var(--text-main);
-            height: 100vh;
-            height: 100dvh;
-            display: flex;
-            overflow: hidden;
-        }
+        body { background: var(--bg-color); color: var(--text-main); height: 100vh; height: 100dvh; display: flex; overflow: hidden; }
 
         .sidebar-overlay {
             position: fixed; top: 0; left: 0; right: 0; bottom: 0;
@@ -39,7 +30,7 @@
             width: 280px; background: var(--sidebar-bg); border-right: 1px solid var(--border-color);
             display: flex; flex-direction: column; height: 100vh; height: 100dvh;
             position: fixed; top: 0; left: 0; z-index: 100;
-            transform: translateX(-100%); transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            transform: translateX(-100%); transition: transform 0.25s ease;
         }
         .sidebar.active { transform: translateX(0); }
 
@@ -50,73 +41,77 @@
 
         .sidebar-header { padding: 18px 20px; display: flex; align-items: center; justify-content: space-between; }
         .brand {
-            font-family: 'Space Grotesk', sans-serif; font-size: 20px; font-weight: 700;
-            color: var(--text-main); text-decoration: none; display: flex; align-items: center; gap: 12px;
+            font-family: 'Space Grotesk', sans-serif; font-size: 18px; font-weight: 700;
+            color: var(--text-main); text-decoration: none; display: flex; align-items: center; gap: 10px;
         }
         .brand-logo-badge {
-            width: 34px; height: 34px; background: linear-gradient(135deg, #18181B 0%, #3F3F46 100%);
-            border-radius: 10px; display: flex; align-items: center; justify-content: center;
-            color: #FFFFFF; font-family: 'Space Grotesk', sans-serif; font-size: 15px; font-weight: 700;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+            padding: 6px 10px; background: #18181B; border-radius: 8px;
+            color: #FFFFFF; font-family: 'Space Grotesk', sans-serif; font-size: 13px; font-weight: 700;
         }
 
         .btn-new-chat {
             margin: 0 16px 16px; padding: 12px 16px; background: #FFFFFF; border: 1px solid var(--border-color);
             border-radius: 12px; display: flex; align-items: center; gap: 10px; font-size: 14px;
-            font-weight: 600; cursor: pointer; color: var(--text-main); transition: all 0.2s ease;
+            font-weight: 600; cursor: pointer; color: var(--text-main);
         }
-        .btn-new-chat:hover { background: #F4F4F5; }
 
         .sidebar-scroll { flex: 1; overflow-y: auto; padding: 0 16px; }
         .chat-item {
             padding: 10px 14px; border-radius: 10px; font-size: 14px; color: #52525B;
             cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-            margin-bottom: 4px; font-weight: 500; transition: background 0.15s ease;
+            margin-bottom: 4px; font-weight: 500;
         }
         .chat-item:hover, .chat-item.active { background: #E4E4E7; color: var(--text-main); }
 
         .sidebar-footer { padding: 16px; border-top: 1px solid var(--border-color); background: var(--sidebar-bg); }
-        .user-profile { display: flex; align-items: center; gap: 12px; text-decoration: none; color: var(--text-main); }
-        .avatar {
-            width: 36px; height: 36px; background: linear-gradient(135deg, #6366F1 0%, #4F46E5 100%);
-            color: #FFFFFF; border-radius: 50%; display: flex; align-items: center; justify-content: center;
-            font-size: 14px; font-weight: 700;
-        }
 
         .main-content { flex: 1; display: flex; flex-direction: column; height: 100vh; height: 100dvh; width: 100%; background: var(--bg-color); }
 
         .top-bar {
             height: 60px; padding: 0 20px; display: flex; align-items: center; justify-content: space-between;
-            border-bottom: 1px solid var(--border-color); background: rgba(248, 250, 249, 0.8); backdrop-filter: blur(8px);
+            border-bottom: 1px solid var(--border-color); background: rgba(248, 250, 249, 0.8);
         }
-        .toggle-btn {
-            background: none; border: none; cursor: pointer; padding: 8px; color: var(--text-main);
-            display: flex; align-items: center; justify-content: center; border-radius: 8px;
-        }
-        .toggle-btn:hover { background: #E4E4E7; }
+        .toggle-btn { background: none; border: none; cursor: pointer; padding: 8px; color: var(--text-main); }
 
         .upgrade-link {
             color: #4F46E5; text-decoration: none; font-weight: 700; cursor: pointer;
-            padding: 5px 12px; background: #EEF2FF; border-radius: 8px; transition: all 0.2s;
+            padding: 5px 12px; background: #EEF2FF; border-radius: 8px;
         }
-        .upgrade-link:hover { background: #E0E7FF; }
 
         .chat-container { flex: 1; overflow-y: auto; padding: 24px 20px; display: flex; flex-direction: column; align-items: center; }
 
         .welcome-box { margin: auto 0; text-align: center; max-width: 580px; display: flex; flex-direction: column; align-items: center; gap: 12px; }
         .hero-logo-badge {
-            width: 64px; height: 64px; background: linear-gradient(135deg, #18181B 0%, #3F3F46 100%);
-            border-radius: 18px; display: flex; align-items: center; justify-content: center;
-            color: #FFFFFF; font-family: 'Space Grotesk', sans-serif; font-size: 26px; font-weight: 700;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.12); margin-bottom: 8px;
+            padding: 10px 20px; background: linear-gradient(135deg, #18181B 0%, #3F3F46 100%);
+            border-radius: 14px; color: #FFFFFF; font-family: 'Space Grotesk', sans-serif; font-size: 22px; font-weight: 700;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1); margin-bottom: 8px;
         }
-        .welcome-title { font-family: 'Space Grotesk', sans-serif; font-size: 36px; font-weight: 700; letter-spacing: -1px; }
+        .welcome-title { font-family: 'Space Grotesk', sans-serif; font-size: 34px; font-weight: 700; }
         .welcome-subtitle { font-size: 16px; color: var(--text-muted); min-height: 28px; font-weight: 500; }
 
-        .messages-list { width: 100%; max-width: 760px; display: flex; flex-direction: column; gap: 16px; }
-        .msg { padding: 14px 18px; border-radius: 16px; font-size: 15px; line-height: 1.6; max-width: 85%; }
-        .msg.user { background: #E2E8F0; color: #0F172A; align-self: flex-end; border-bottom-right-radius: 4px; }
-        .msg.assistant { background: #FFFFFF; border: 1px solid var(--border-color); color: var(--text-main); align-self: flex-start; border-bottom-left-radius: 4px; box-shadow: 0 2px 8px rgba(0,0,0,0.02); }
+        .messages-list { width: 100%; max-width: 760px; display: flex; flex-direction: column; gap: 18px; }
+
+        /* Message Card with Hover Meta (Timestamp & Copy Button) */
+        .msg-wrapper { display: flex; flex-direction: column; position: relative; max-width: 85%; }
+        .msg-wrapper.user { align-self: flex-end; }
+        .msg-wrapper.assistant { align-self: flex-start; }
+
+        .msg { padding: 14px 18px; border-radius: 16px; font-size: 15px; line-height: 1.6; position: relative; }
+        .msg-wrapper.user .msg { background: #E2E8F0; color: #0F172A; border-bottom-right-radius: 4px; }
+        .msg-wrapper.assistant .msg { background: #FFFFFF; border: 1px solid var(--border-color); color: var(--text-main); border-bottom-left-radius: 4px; box-shadow: 0 2px 8px rgba(0,0,0,0.02); }
+
+        .msg-meta {
+            display: flex; align-items: center; gap: 10px; font-size: 11px; color: var(--text-muted);
+            margin-top: 4px; opacity: 0; transition: opacity 0.2s ease; padding: 0 4px;
+        }
+        .msg-wrapper:hover .msg-meta { opacity: 1; }
+        .btn-copy { background: none; border: none; cursor: pointer; color: var(--text-muted); font-size: 11px; font-weight: 600; }
+        .btn-copy:hover { color: var(--text-main); }
+
+        .limit-banner {
+            background: #FEF2F2; border: 1px solid #FCA5A5; color: #991B1B; padding: 12px 16px;
+            border-radius: 12px; font-size: 14px; text-align: center; margin-bottom: 12px; font-weight: 600; display: none;
+        }
 
         .input-wrapper { padding: 16px 20px; width: 100%; max-width: 780px; margin: 0 auto; }
         .input-box {
@@ -126,33 +121,18 @@
         .chat-input { width: 100%; border: none; outline: none; font-size: 15px; background: transparent; resize: none; min-height: 44px; max-height: 140px; }
         .input-bottom-row { display: flex; align-items: center; justify-content: space-between; }
         .left-actions { display: flex; align-items: center; gap: 8px; }
-        .icon-btn {
-            background: #F4F4F5; border: none; padding: 8px; border-radius: 10px; cursor: pointer; color: #52525B;
-            display: flex; align-items: center; justify-content: center;
-        }
-        .icon-btn:hover { background: #E4E4E7; }
+        .icon-btn { background: #F4F4F5; border: none; padding: 8px; border-radius: 10px; cursor: pointer; color: #52525B; }
         .btn-send { background: #18181B; color: #FFFFFF; border: none; padding: 8px 18px; border-radius: 12px; font-size: 14px; font-weight: 600; cursor: pointer; }
 
-        /* Pricing Modal */
         .modal {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(0,0,0,0.5); backdrop-filter: blur(4px);
             display: none; align-items: center; justify-content: center; z-index: 1000; padding: 20px;
         }
-        .modal-card {
-            background: #FFFFFF; padding: 24px; border-radius: 24px; max-width: 720px; width: 100%;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.2);
-        }
+        .modal-card { background: #FFFFFF; padding: 24px; border-radius: 24px; max-width: 720px; width: 100%; }
         .plan-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; margin-top: 20px; }
-        .plan-box {
-            border: 1px solid var(--border-color); border-radius: 18px; padding: 20px; display: flex; flex-direction: column; justify-content: space-between;
-        }
-        .plan-box.pro {
-            border: 2px solid #6366F1; background: #F5F3FF; position: relative;
-        }
-        .badge-popular {
-            position: absolute; top: -12px; right: 16px; background: #6366F1; color: #FFF; font-size: 11px; font-weight: 700; padding: 4px 10px; border-radius: 20px;
-        }
+        .plan-box { border: 1px solid var(--border-color); border-radius: 18px; padding: 20px; display: flex; flex-direction: column; justify-content: space-between; }
+        .plan-box.pro { border: 2px solid #6366F1; background: #F5F3FF; }
     </style>
 </head>
 <body>
@@ -162,8 +142,7 @@
 <aside class="sidebar" id="sidebar">
     <div class="sidebar-header">
         <a href="/" class="brand">
-            <div class="brand-logo-badge">SD</div>
-            SD AGENT
+            <div class="brand-logo-badge">SD AGENT</div>
         </a>
         <button class="toggle-btn" onclick="toggleSidebar()">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
@@ -175,17 +154,14 @@
         New chat
     </button>
 
-    <div class="sidebar-scroll" id="chatsHistoryList">
-        <!-- Persistent History Items Will Render Here -->
-    </div>
+    <div class="sidebar-scroll" id="chatsHistoryList"></div>
 
     <div class="sidebar-footer">
         {% if is_authenticated %}
-            <div class="user-profile">
-                <div class="avatar">{{ username|slice:":2"|upper }}</div>
-                <div style="flex:1;">
+            <div style="display:flex; align-items:center; justify-content:space-between;">
+                <div>
                     <div style="font-size:14px; font-weight:700;">{{ username }}</div>
-                    <div style="font-size:12px; color:var(--text-muted);">{% if is_premium %}Pro Member{% else %}Free plan{% endif %}</div>
+                    <div style="font-size:12px; color:var(--text-muted);">{% if is_premium %}Pro Member{% else %}Free Plan{% endif %}</div>
                 </div>
                 <a href="{% url 'logout' %}" style="color:var(--text-muted); text-decoration:none; font-size:12px; font-weight:600;">Logout</a>
             </div>
@@ -213,7 +189,7 @@
 
     <div class="chat-container" id="chatContainer">
         <div class="welcome-box" id="welcomeBox">
-            <div class="hero-logo-badge">SD</div>
+            <div class="hero-logo-badge">SD AGENT</div>
             <h1 class="welcome-title">Hey there, {{ username|default:"Explorer" }}</h1>
             <p class="welcome-subtitle" id="dynamicSubtitle"></p>
         </div>
@@ -221,82 +197,58 @@
     </div>
 
     <div class="input-wrapper">
+        <div class="limit-banner" id="limitBanner"></div>
         <div class="input-box">
-            <textarea class="chat-input" id="userInput" placeholder="Ask anything..." rows="1" onkeydown="handleKeyDown(event)"></textarea>
+            <textarea class="chat-input" id="userInput" placeholder="Ask SD AGENT anything..." rows="1" onkeydown="handleKeyDown(event)"></textarea>
             <div class="input-bottom-row">
                 <div class="left-actions">
-                    <button class="icon-btn" title="Add File / Context" onclick="alert('File Upload coming soon!')"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg></button>
-                    <button class="icon-btn" title="Upload Image" onclick="alert('Generative Image & Vision AI active in Pro!')"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg></button>
+                    <button class="icon-btn" title="Add File" onclick="alert('Feature coming soon!')"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg></button>
                 </div>
-                <button class="btn-send" onclick="sendMessage()">Send</button>
+                <button class="btn-send" id="btnSend" onclick="sendMessage()">Send</button>
             </div>
         </div>
     </div>
 </main>
 
-<!-- Pricing Plans Modal -->
+<!-- Pricing Modal -->
 <div class="modal" id="upgradeModal">
     <div class="modal-card">
-        <div style="display:flex; justify-size:space-between; align-items:center;">
-            <h2 style="font-family:'Space Grotesk'; font-size:22px;">Upgrade Your Plan ⚡</h2>
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+            <h2 style="font-family:'Space Grotesk'; font-size:22px;">Upgrade to SD AGENT Pro ⚡</h2>
             <button onclick="closeUpgradeModal()" style="background:none; border:none; cursor:pointer; font-size:20px;">✕</button>
         </div>
-        <p style="color:var(--text-muted); font-size:14px; margin-top:4px;">Unlock advanced AI reasoning, image generation & live search.</p>
-
         <div class="plan-grid">
-            <!-- Free Plan -->
             <div class="plan-box">
                 <div>
-                    <h3 style="font-size:18px;">Free Plan</h3>
-                    <div style="font-size:24px; font-weight:700; margin:12px 0;">₹0 <span style="font-size:12px; color:var(--text-muted); font-weight:400;">/ forever</span></div>
-                    <ul style="font-size:13px; color:#52525B; line-height:2; list-style:none;">
-                        <li>✓ Standard AI Assistant</li>
-                        <li>✓ Basic Web Search</li>
-                        <li>✓ Chat History Saved</li>
-                    </ul>
+                    <h3>Free Plan</h3>
+                    <div style="font-size:24px; font-weight:700; margin:12px 0;">₹0</div>
+                    <p style="font-size:13px; color:#52525B;">8 Messages / 4 Hours limit</p>
                 </div>
-                <button onclick="closeUpgradeModal()" style="width:100%; margin-top:20px; padding:10px; border:1px solid var(--border-color); background:#FFF; border-radius:10px; font-weight:600; cursor:pointer;">Current Plan</button>
             </div>
-
-            <!-- Pro Plan -->
             <div class="plan-box pro">
-                <div class="badge-popular">BEST VALUE</div>
                 <div>
-                    <h3 style="font-size:18px; color:#4F46E5;">SD Pro Unlimited</h3>
-                    <div style="font-size:26px; font-weight:700; color:#18181B; margin:12px 0;">₹109 <span style="font-size:12px; color:var(--text-muted); font-weight:400;">/ 3 Months</span></div>
-                    <ul style="font-size:13px; color:#374151; line-height:2; list-style:none;">
-                        <li>✓ <strong>Unlimited Real-time Web Searches</strong></li>
-                        <li>✓ <strong>Generative AI Image Creation</strong></li>
-                        <li>✓ <strong>Ultra-Fast Response Speed</strong></li>
-                        <li>✓ Priority Code & Python Assistance</li>
-                    </ul>
+                    <h3 style="color:#4F46E5;">SD AGENT Pro</h3>
+                    <div style="font-size:26px; font-weight:700; margin:12px 0;">₹109 <span style="font-size:12px;">/ 3 Months</span></div>
+                    <p style="font-size:13px; color:#374151;">✓ Unlimited Searches & Instant Answers</p>
                 </div>
-                <button onclick="alert('Payment Gateway Integrating Soon!')" style="width:100%; margin-top:20px; padding:10px; background:#4F46E5; color:#FFF; border:none; border-radius:10px; font-weight:700; cursor:pointer; box-shadow:0 4px 12px rgba(99,102,241,0.3);">Get 3 Months for ₹109</button>
+                <button onclick="alert('Payment gateway integrating!')" style="width:100%; margin-top:20px; padding:10px; background:#4F46E5; color:#FFF; border:none; border-radius:10px; font-weight:700; cursor:pointer;">Get Pro for ₹109</button>
             </div>
         </div>
     </div>
 </div>
 
 <script>
+    const IS_AUTHENTICATED = {% if is_authenticated %}true{% else %}false{% endif %};
     let activeConversationId = null;
 
     function toggleSidebar() {
         const sidebar = document.getElementById('sidebar');
         const overlay = document.getElementById('sidebarOverlay');
-        if (window.innerWidth >= 900) {
-            sidebar.classList.toggle('collapsed');
-        } else {
-            sidebar.classList.toggle('active');
-            overlay.classList.toggle('active');
-        }
+        if (window.innerWidth >= 900) sidebar.classList.toggle('collapsed');
+        else { sidebar.classList.toggle('active'); overlay.classList.toggle('active'); }
     }
 
-    const phrases = [
-        "How can I help you today?",
-        "Let's build something extraordinary.",
-        "Need help with code, ideas, or analysis?",
-        "What's on your mind today?"
-    ];
+    const phrases = ["How can I help you today?", "Let's build something extraordinary.", "What's on your mind today?"];
     let phraseIdx = 0, charIdx = 0, isDeleting = false;
     const subEl = document.getElementById('dynamicSubtitle');
 
@@ -308,9 +260,10 @@
         else if (isDeleting && charIdx === 0) { isDeleting = false; phraseIdx = (phraseIdx + 1) % phrases.length; speed = 500; }
         setTimeout(typeEffect, speed);
     }
+
     document.addEventListener("DOMContentLoaded", () => {
         typeEffect();
-        loadSavedChatHistory();
+        checkRateLimits();
     });
 
     function openUpgradeModal() { document.getElementById('upgradeModal').style.display = 'flex'; }
@@ -323,82 +276,113 @@
         }
     }
 
-    function startNewChat() {
-        activeConversationId = null;
-        document.getElementById('messagesList').innerHTML = '';
-        document.getElementById('welcomeBox').style.display = 'flex';
-    }
+    /* Rate Limiting Engine */
+    function checkRateLimits() {
+        const now = Date.now();
+        const limitBanner = document.getElementById('limitBanner');
+        const userInput = document.getElementById('userInput');
+        const btnSend = document.getElementById('btnSend');
 
-    // Save & Persist Chat History
-    function loadSavedChatHistory() {
-        const historyContainer = document.getElementById('chatsHistoryList');
-        const savedChats = JSON.parse(localStorage.getItem('sd_agent_chats') || '[]');
-        historyContainer.innerHTML = '';
+        if (!IS_AUTHENTICATED) {
+            const guestCount = parseInt(localStorage.getItem('guest_msg_count') || '0');
+            if (guestCount >= 3) {
+                limitBanner.style.display = 'block';
+                limitBanner.innerHTML = 'You reached the 3 free search limit. <a href="/signup/" style="color:#991B1B; font-weight:700;">Sign up to continue!</a>';
+                userInput.disabled = true;
+                btnSend.disabled = true;
+                return false;
+            }
+        } else {
+            const cooldownUntil = parseInt(localStorage.getItem('user_cooldown_until') || '0');
+            if (now < cooldownUntil) {
+                const resetDate = new Date(cooldownUntil);
+                const timeString = resetDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
-        savedChats.forEach((chat, index) => {
-            const item = document.createElement('div');
-            item.className = 'chat-item' + (activeConversationId === chat.id ? ' active' : '');
-            item.innerText = chat.title || `Chat ${index + 1}`;
-            item.onclick = () => loadChatSession(chat.id);
-            historyContainer.appendChild(item);
-        });
-    }
+                limitBanner.style.display = 'block';
+                userInput.disabled = true;
+                btnSend.disabled = true;
 
-    function saveMessageToLocalHistory(userText, botReply) {
-        let savedChats = JSON.parse(localStorage.getItem('sd_agent_chats') || '[]');
-        if (!activeConversationId) {
-            activeConversationId = 'chat_' + Date.now();
-            savedChats.unshift({
-                id: activeConversationId,
-                title: userText.substring(0, 25) + '...',
-                messages: []
-            });
+                // Live Countdown Timer
+                setInterval(() => {
+                    const remaining = cooldownUntil - Date.now();
+                    if (remaining <= 0) {
+                        localStorage.removeItem('user_cooldown_until');
+                        localStorage.setItem('user_msg_count', '0');
+                        location.reload();
+                    } else {
+                        const hrs = Math.floor(remaining / (1000 * 60 * 60));
+                        const mins = Math.floor((remaining % (1000 * 60 * 60)) / (1000 * 60));
+                        const secs = Math.floor((remaining % (1000 * 60)) / 1000);
+                        limitBanner.innerHTML = `Message limit reached! Next search available in <strong>${hrs}h ${mins}m ${secs}s</strong> (at ${timeString})`;
+                    }
+                }, 1000);
+                return false;
+            }
         }
-
-        let chat = savedChats.find(c => c.id === activeConversationId);
-        if (chat) {
-            chat.messages.push({ role: 'user', content: userText });
-            chat.messages.push({ role: 'assistant', content: botReply });
-        }
-
-        localStorage.setItem('sd_agent_chats', JSON.stringify(savedChats));
-        loadSavedChatHistory();
+        return true;
     }
 
-    function loadChatSession(chatId) {
-        activeConversationId = chatId;
-        let savedChats = JSON.parse(localStorage.getItem('sd_agent_chats') || '[]');
-        let chat = savedChats.find(c => c.id === chatId);
-        if (!chat) return;
+    function incrementMessageCount() {
+        if (!IS_AUTHENTICATED) {
+            let count = parseInt(localStorage.getItem('guest_msg_count') || '0') + 1;
+            localStorage.setItem('guest_msg_count', count.toString());
+        } else {
+            let count = parseInt(localStorage.getItem('user_msg_count') || '0') + 1;
+            localStorage.setItem('user_msg_count', count.toString());
+            if (count >= 8) {
+                const cooldownUntil = Date.now() + (4 * 60 * 60 * 1000); // 4 Hours
+                localStorage.setItem('user_cooldown_until', cooldownUntil.toString());
+            }
+        }
+    }
 
-        document.getElementById('welcomeBox').style.display = 'none';
+    function renderMessage(role, text) {
         const list = document.getElementById('messagesList');
-        list.innerHTML = '';
+        const wrapper = document.createElement('div');
+        wrapper.className = 'msg-wrapper ' + role;
 
-        chat.messages.forEach(msg => {
-            const div = document.createElement('div');
-            div.className = 'msg ' + msg.role;
-            div.innerText = msg.content;
-            list.appendChild(div);
-        });
+        const msgDiv = document.createElement('div');
+        msgDiv.className = 'msg';
+        msgDiv.innerText = text;
 
-        loadSavedChatHistory();
+        const metaDiv = document.createElement('div');
+        metaDiv.className = 'msg-meta';
+
+        const timeSpan = document.createElement('span');
+        timeSpan.innerText = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+        const copyBtn = document.createElement('button');
+        copyBtn.className = 'btn-copy';
+        copyBtn.innerText = 'Copy';
+        copyBtn.onclick = () => {
+            navigator.clipboard.writeText(text);
+            copyBtn.innerText = 'Copied!';
+            setTimeout(() => copyBtn.innerText = 'Copy', 2000);
+        };
+
+        metaDiv.appendChild(timeSpan);
+        metaDiv.appendChild(copyBtn);
+
+        wrapper.appendChild(msgDiv);
+        wrapper.appendChild(metaDiv);
+        list.appendChild(wrapper);
+
+        const chatContainer = document.getElementById('chatContainer');
+        chatContainer.scrollTop = chatContainer.scrollHeight;
     }
 
     function sendMessage() {
+        if (!checkRateLimits()) return;
+
         const input = document.getElementById('userInput');
         const text = input.value.trim();
         if (!text) return;
 
         document.getElementById('welcomeBox').style.display = 'none';
-        const list = document.getElementById('messagesList');
-
-        const userDiv = document.createElement('div');
-        userDiv.className = 'msg user';
-        userDiv.innerText = text;
-        list.appendChild(userDiv);
-
+        renderMessage('user', text);
         input.value = '';
+
+        incrementMessageCount();
 
         fetch('/api/agent/chat/', {
             method: 'POST',
@@ -410,23 +394,18 @@
         })
         .then(res => res.json())
         .then(data => {
-            const reply = data.reply || 'No response received.';
-            const aiDiv = document.createElement('div');
-            aiDiv.className = 'msg assistant';
-            aiDiv.innerText = reply;
-            list.appendChild(aiDiv);
-
-            saveMessageToLocalHistory(text, reply);
-
-            const chatContainer = document.getElementById('chatContainer');
-            chatContainer.scrollTop = chatContainer.scrollHeight;
+            const reply = data.reply || 'Responded successfully.';
+            renderMessage('assistant', reply);
+            checkRateLimits();
         })
         .catch(err => {
-            const aiDiv = document.createElement('div');
-            aiDiv.className = 'msg assistant';
-            aiDiv.innerText = 'Error: ' + err;
-            list.appendChild(aiDiv);
+            renderMessage('assistant', 'Technical error, please try again.');
         });
+    }
+
+    function startNewChat() {
+        document.getElementById('messagesList').innerHTML = '';
+        document.getElementById('welcomeBox').style.display = 'flex';
     }
 </script>
 
