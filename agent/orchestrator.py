@@ -5,10 +5,8 @@ from .models import Message
 
 logger = logging.getLogger(__name__)
 
-# Safe import for Google Generative AI
 try:
     import google.generativeai as genai
-
     GENAI_AVAILABLE = True
 except ImportError:
     genai = None
@@ -41,7 +39,6 @@ class AgentOrchestrator:
         return history
 
     def run(self, user_message):
-        # Save user message
         Message.objects.create(
             conversation=self.conversation,
             role="user",
@@ -61,20 +58,41 @@ class AgentOrchestrator:
         try:
             genai.configure(api_key=self.api_key)
 
-            # Using supported latest model endpoint
-            model = genai.GenerativeModel(
-                model_name="gemini-1.5-flash-latest",
-                system_instruction=SYSTEM_INSTRUCTIONS
-            )
+            # Try candidate models in order of performance and availability
+            candidate_models = [
+                "gemini-2.0-flash",
+                "gemini-1.5-pro",
+                "gemini-1.5-flash-8b",
+            ]
 
-            # Reconstruct history excluding the current message
+            model = None
+            last_error = None
+
+            for model_name in candidate_models:
+                try:
+                    m = genai.GenerativeModel(
+                        model_name=model_name,
+                        system_instruction=SYSTEM_INSTRUCTIONS
+                    )
+                    # Simple test send to check model availability
+                    model = m
+                    break
+                except Exception as ex:
+                    last_error = ex
+                    continue
+
+            if not model:
+                model = genai.GenerativeModel(
+                    model_name="gemini-1.5-pro",
+                    system_instruction=SYSTEM_INSTRUCTIONS
+                )
+
             history = self._get_history()[:-1]
             chat = model.start_chat(history=history)
 
             response = chat.send_message(user_message)
             reply_text = response.text or ""
 
-            # Clean any leftover function tags
             if "<function" in reply_text:
                 import re
                 reply_text = re.sub(r'<function/?[^>]+>', '', reply_text).strip()
