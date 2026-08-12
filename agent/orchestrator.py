@@ -7,6 +7,7 @@ logger = logging.getLogger(__name__)
 
 try:
     import google.generativeai as genai
+
     GENAI_AVAILABLE = True
 except ImportError:
     genai = None
@@ -38,6 +39,28 @@ class AgentOrchestrator:
             history.append({"role": role, "parts": [content]})
         return history
 
+    def _get_active_model(self):
+        """Dynamically fetches an available Gemini model that supports generateContent."""
+        try:
+            available_models = [
+                m.name for m in genai.list_models()
+                if 'generateContent' in m.supported_generation_methods
+            ]
+
+            # Prefer flash or pro models if available
+            for target in ["gemini-2.5-flash", "gemini-2.0-flash", "gemini-1.5-flash", "gemini-1.5-pro"]:
+                for full_name in available_models:
+                    if target in full_name:
+                        return full_name
+
+            # Fallback to any supported model
+            if available_models:
+                return available_models[0]
+        except Exception as e:
+            logger.warning(f"Could not list models dynamically: {e}")
+
+        return "models/gemini-1.5-flash"
+
     def run(self, user_message):
         Message.objects.create(
             conversation=self.conversation,
@@ -58,32 +81,13 @@ class AgentOrchestrator:
         try:
             genai.configure(api_key=self.api_key)
 
-            # Standard supported models list
-            candidate_models = [
-                "gemini-1.5-flash",
-                "gemini-1.5-pro",
-            ]
+            # Get exact valid model string from account
+            selected_model_name = self._get_active_model()
 
-            model = None
-            last_error = None
-
-            for model_name in candidate_models:
-                try:
-                    m = genai.GenerativeModel(
-                        model_name=model_name,
-                        system_instruction=SYSTEM_INSTRUCTIONS
-                    )
-                    model = m
-                    break
-                except Exception as ex:
-                    last_error = ex
-                    continue
-
-            if not model:
-                model = genai.GenerativeModel(
-                    model_name="gemini-1.5-flash",
-                    system_instruction=SYSTEM_INSTRUCTIONS
-                )
+            model = genai.GenerativeModel(
+                model_name=selected_model_name,
+                system_instruction=SYSTEM_INSTRUCTIONS
+            )
 
             history = self._get_history()[:-1]
             chat = model.start_chat(history=history)
