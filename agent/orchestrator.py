@@ -8,6 +8,7 @@ logger = logging.getLogger(__name__)
 # Safe import for Google Generative AI
 try:
     import google.generativeai as genai
+
     GENAI_AVAILABLE = True
 except ImportError:
     genai = None
@@ -59,8 +60,10 @@ class AgentOrchestrator:
 
         try:
             genai.configure(api_key=self.api_key)
+
+            # Using supported latest model endpoint
             model = genai.GenerativeModel(
-                model_name="gemini-1.5-flash",
+                model_name="gemini-1.5-flash-latest",
                 system_instruction=SYSTEM_INSTRUCTIONS
             )
 
