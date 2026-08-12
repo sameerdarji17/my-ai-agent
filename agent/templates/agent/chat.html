@@ -5,6 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>SD AGENT</title>
+    <!-- Premium Next-Level Typography -->
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Plus Jakarta Sans', sans-serif; }
@@ -12,91 +13,233 @@
         :root {
             --bg-color: #F8FAF9;
             --sidebar-bg: #EFEFEA;
+            --card-bg: #FFFFFF;
             --text-main: #18181B;
             --text-muted: #71717A;
+            --accent-purple: #6366F1;
             --border-color: #E4E4E7;
         }
 
-        body { background: var(--bg-color); color: var(--text-main); height: 100vh; height: 100dvh; display: flex; overflow: hidden; }
+        body {
+            background: var(--bg-color);
+            color: var(--text-main);
+            height: 100vh;
+            height: 100dvh;
+            display: flex;
+            overflow: hidden;
+        }
 
+        /* Mobile Overlay Backdrop */
         .sidebar-overlay {
-            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-            background: rgba(0, 0, 0, 0.4); backdrop-filter: blur(2px); z-index: 99;
-            opacity: 0; visibility: hidden; transition: all 0.25s ease;
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0, 0, 0, 0.4);
+            backdrop-filter: blur(2px);
+            z-index: 99;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.25s ease;
         }
-        .sidebar-overlay.active { opacity: 1; visibility: visible; }
+        .sidebar-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
 
+        /* Sidebar Styling */
         .sidebar {
-            width: 280px; background: var(--sidebar-bg); border-right: 1px solid var(--border-color);
-            display: flex; flex-direction: column; height: 100vh; height: 100dvh;
-            position: fixed; top: 0; left: 0; z-index: 100;
-            transform: translateX(-100%); transition: transform 0.25s ease;
+            width: 280px;
+            background: var(--sidebar-bg);
+            border-right: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            height: 100dvh;
+            position: fixed;
+            top: 0; left: 0;
+            z-index: 100;
+            transform: translateX(-100%);
+            transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
         }
-        .sidebar.active { transform: translateX(0); }
+        .sidebar.active {
+            transform: translateX(0);
+        }
 
+        /* Desktop Visible State when Toggled */
         @media (min-width: 900px) {
-            .sidebar { position: relative; transform: translateX(0); }
-            .sidebar.collapsed { margin-left: -280px; }
+            .sidebar {
+                position: relative;
+                transform: translateX(0);
+            }
+            .sidebar.collapsed {
+                margin-left: -280px;
+            }
         }
 
-        .sidebar-header { padding: 18px 20px; display: flex; align-items: center; justify-content: space-between; }
-        .brand {
-            font-family: 'Space Grotesk', sans-serif; font-size: 18px; font-weight: 700;
-            color: var(--text-main); text-decoration: none; display: flex; align-items: center; gap: 10px;
+        /* Sidebar Header */
+        .sidebar-header {
+            padding: 18px 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
         }
-        .brand-logo-badge {
-            padding: 6px 10px; background: #18181B; border-radius: 8px;
-            color: #FFFFFF; font-family: 'Space Grotesk', sans-serif; font-size: 13px; font-weight: 700;
+        .brand {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--text-main);
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            letter-spacing: -0.5px;
         }
 
         .btn-new-chat {
-            margin: 0 16px 16px; padding: 12px 16px; background: #FFFFFF; border: 1px solid var(--border-color);
-            border-radius: 12px; display: flex; align-items: center; gap: 10px; font-size: 14px;
-            font-weight: 600; cursor: pointer; color: var(--text-main);
+            margin: 0 16px 16px;
+            padding: 12px 16px;
+            background: #FFFFFF;
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            color: var(--text-main);
+            transition: all 0.2s ease;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.04);
         }
+        .btn-new-chat:hover { background: #F4F4F5; transform: translateY(-1px); }
 
-        .sidebar-scroll { flex: 1; overflow-y: auto; padding: 0 16px; }
+        .sidebar-scroll {
+            flex: 1;
+            overflow-y: auto;
+            padding: 0 16px;
+        }
         .chat-item {
-            padding: 10px 14px; border-radius: 10px; font-size: 14px; color: #52525B;
-            cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-            margin-bottom: 4px; font-weight: 500;
+            padding: 10px 14px;
+            border-radius: 10px;
+            font-size: 14px;
+            color: #52525B;
+            cursor: pointer;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            margin-bottom: 4px;
+            font-weight: 500;
+            transition: background 0.15s ease;
         }
-        .chat-item:hover, .chat-item.active { background: #E4E4E7; color: var(--text-main); }
+        .chat-item:hover, .chat-item.active {
+            background: #E4E4E7;
+            color: var(--text-main);
+        }
 
-        .sidebar-footer { padding: 16px; border-top: 1px solid var(--border-color); background: var(--sidebar-bg); }
+        .sidebar-footer {
+            padding: 16px;
+            border-top: 1px solid var(--border-color);
+            background: var(--sidebar-bg);
+        }
+        .user-profile {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            text-decoration: none;
+            color: var(--text-main);
+        }
+        .avatar {
+            width: 36px; height: 36px;
+            background: linear-gradient(135deg, #6366F1 0%, #4F46E5 100%);
+            color: #FFFFFF;
+            border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 14px; font-weight: 700;
+        }
 
-        .main-content { flex: 1; display: flex; flex-direction: column; height: 100vh; height: 100dvh; width: 100%; background: var(--bg-color); }
+        /* Main Area */
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            height: 100dvh;
+            width: 100%;
+            background: var(--bg-color);
+        }
 
         .top-bar {
-            height: 60px; padding: 0 20px; display: flex; align-items: center; justify-content: space-between;
-            border-bottom: 1px solid var(--border-color); background: rgba(248, 250, 249, 0.8);
+            height: 60px;
+            padding: 0 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid var(--border-color);
+            background: rgba(248, 250, 249, 0.8);
+            backdrop-filter: blur(8px);
         }
-        .toggle-btn { background: none; border: none; cursor: pointer; padding: 8px; color: var(--text-main); }
+        .toggle-btn {
+            background: none; border: none; cursor: pointer; padding: 8px; color: var(--text-main);
+            display: flex; align-items: center; justify-content: center;
+            border-radius: 8px;
+            transition: background 0.2s;
+        }
+        .toggle-btn:hover { background: #E4E4E7; }
 
+        .top-center-plan {
+            font-size: 13px; color: var(--text-muted); font-weight: 500;
+            display: flex; align-items: center; gap: 8px;
+        }
         .upgrade-link {
-            color: #4F46E5; text-decoration: none; font-weight: 700; cursor: pointer;
-            padding: 5px 12px; background: #EEF2FF; border-radius: 8px;
+            color: #4F46E5;
+            text-decoration: none;
+            font-weight: 700;
+            cursor: pointer;
+            padding: 5px 12px;
+            background: #EEF2FF;
+            border-radius: 8px;
+            transition: all 0.2s;
         }
+        .upgrade-link:hover { background: #E0E7FF; }
 
-        .chat-container { flex: 1; overflow-y: auto; padding: 24px 20px; display: flex; flex-direction: column; align-items: center; }
-
-        .welcome-box { margin: auto 0; text-align: center; max-width: 580px; display: flex; flex-direction: column; align-items: center; gap: 12px; }
-        .hero-logo-badge {
-            padding: 10px 20px; background: linear-gradient(135deg, #18181B 0%, #3F3F46 100%);
-            border-radius: 14px; color: #FFFFFF; font-family: 'Space Grotesk', sans-serif; font-size: 22px; font-weight: 700;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.1); margin-bottom: 8px;
+        /* Welcome Center Box */
+        .chat-container {
+            flex: 1;
+            overflow-y: auto;
+            padding: 24px 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
         }
-        .welcome-title { font-family: 'Space Grotesk', sans-serif; font-size: 34px; font-weight: 700; }
-        .welcome-subtitle { font-size: 16px; color: var(--text-muted); min-height: 28px; font-weight: 500; }
+        .welcome-box {
+            margin: auto 0;
+            text-align: center;
+            max-width: 580px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 12px;
+        }
+        .welcome-title {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 36px;
+            font-weight: 700;
+            letter-spacing: -1px;
+            color: var(--text-main);
+        }
+        .welcome-subtitle {
+            font-size: 16px;
+            color: var(--text-muted);
+            min-height: 28px;
+            font-weight: 500;
+        }
 
         .messages-list { width: 100%; max-width: 760px; display: flex; flex-direction: column; gap: 18px; }
 
-        /* Message Card with Hover Meta (Timestamp & Copy Button) */
         .msg-wrapper { display: flex; flex-direction: column; position: relative; max-width: 85%; }
         .msg-wrapper.user { align-self: flex-end; }
         .msg-wrapper.assistant { align-self: flex-start; }
 
-        .msg { padding: 14px 18px; border-radius: 16px; font-size: 15px; line-height: 1.6; position: relative; }
+        .msg { padding: 14px 18px; border-radius: 16px; font-size: 15px; line-height: 1.6; }
         .msg-wrapper.user .msg { background: #E2E8F0; color: #0F172A; border-bottom-right-radius: 4px; }
         .msg-wrapper.assistant .msg { background: #FFFFFF; border: 1px solid var(--border-color); color: var(--text-main); border-bottom-left-radius: 4px; box-shadow: 0 2px 8px rgba(0,0,0,0.02); }
 
@@ -113,26 +256,65 @@
             border-radius: 12px; font-size: 14px; text-align: center; margin-bottom: 12px; font-weight: 600; display: none;
         }
 
-        .input-wrapper { padding: 16px 20px; width: 100%; max-width: 780px; margin: 0 auto; }
-        .input-box {
-            background: #FFFFFF; border: 1px solid var(--border-color); border-radius: 20px; padding: 14px 18px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.04); display: flex; flex-direction: column; gap: 12px;
+        /* Input Area with (+) Icon & Tools */
+        .input-wrapper {
+            padding: 16px 20px;
+            width: 100%;
+            max-width: 780px;
+            margin: 0 auto;
         }
-        .chat-input { width: 100%; border: none; outline: none; font-size: 15px; background: transparent; resize: none; min-height: 44px; max-height: 140px; }
-        .input-bottom-row { display: flex; align-items: center; justify-content: space-between; }
-        .left-actions { display: flex; align-items: center; gap: 8px; }
-        .icon-btn { background: #F4F4F5; border: none; padding: 8px; border-radius: 10px; cursor: pointer; color: #52525B; }
-        .btn-send { background: #18181B; color: #FFFFFF; border: none; padding: 8px 18px; border-radius: 12px; font-size: 14px; font-weight: 600; cursor: pointer; }
+        .input-box {
+            background: #FFFFFF;
+            border: 1px solid var(--border-color);
+            border-radius: 20px;
+            padding: 14px 18px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.04);
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            transition: border-color 0.2s;
+        }
+        .input-box:focus-within {
+            border-color: #A5B4FC;
+        }
+        .chat-input {
+            width: 100%; border: none; outline: none; font-size: 15px; background: transparent; resize: none; min-height: 44px; max-height: 140px; color: var(--text-main);
+        }
+        .input-bottom-row {
+            display: flex; align-items: center; justify-content: space-between;
+        }
+        .left-actions {
+            display: flex; align-items: center; gap: 8px;
+        }
+        .icon-btn {
+            background: #F4F4F5; border: none; padding: 8px; border-radius: 10px; cursor: pointer; color: #52525B; display: flex; align-items: center; justify-content: center; transition: all 0.2s;
+        }
+        .icon-btn:hover { background: #E4E4E7; color: var(--text-main); }
+        .btn-send {
+            background: #18181B; color: #FFFFFF; border: none; padding: 8px 18px; border-radius: 12px; font-size: 14px; font-weight: 600; cursor: pointer; transition: background 0.2s;
+        }
+        .btn-send:hover { background: #27272A; }
 
+        /* Pricing Modal */
         .modal {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(0,0,0,0.5); backdrop-filter: blur(4px);
             display: none; align-items: center; justify-content: center; z-index: 1000; padding: 20px;
         }
-        .modal-card { background: #FFFFFF; padding: 24px; border-radius: 24px; max-width: 720px; width: 100%; }
+        .modal-card {
+            background: #FFFFFF; padding: 24px; border-radius: 24px; max-width: 720px; width: 100%;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+        }
         .plan-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; margin-top: 20px; }
-        .plan-box { border: 1px solid var(--border-color); border-radius: 18px; padding: 20px; display: flex; flex-direction: column; justify-content: space-between; }
-        .plan-box.pro { border: 2px solid #6366F1; background: #F5F3FF; }
+        .plan-box {
+            border: 1px solid var(--border-color); border-radius: 18px; padding: 20px; display: flex; flex-direction: column; justify-content: space-between;
+        }
+        .plan-box.pro {
+            border: 2px solid #6366F1; background: #F5F3FF; position: relative;
+        }
+        .badge-popular {
+            position: absolute; top: -12px; right: 16px; background: #6366F1; color: #FFF; font-size: 11px; font-weight: 700; padding: 4px 10px; border-radius: 20px;
+        }
     </style>
 </head>
 <body>
@@ -142,7 +324,14 @@
 <aside class="sidebar" id="sidebar">
     <div class="sidebar-header">
         <a href="/" class="brand">
-            <div class="brand-logo-badge">SD AGENT</div>
+            <!-- Exact New SD AGENT Monogram Badge -->
+            <div style="width: 38px; height: 38px; background: #0E0F12; border-radius: 10px; display: flex; align-items: center; justify-content: center;">
+                <svg width="24" height="24" viewBox="0 0 100 100" fill="none">
+                    <path d="M 38 28 C 24 28 22 42 36 48 C 50 54 48 72 32 72 C 24 72 20 66 18 60" stroke="#8B8EFF" stroke-width="11" stroke-linecap="round" fill="none"/>
+                    <path d="M 48 25 L 48 75 C 78 75 78 25 48 25 Z" stroke="#8B8EFF" stroke-width="11" stroke-linejoin="round" fill="none"/>
+                </svg>
+            </div>
+            SD <span style="color: #6366F1;">AGENT</span>
         </a>
         <button class="toggle-btn" onclick="toggleSidebar()">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
@@ -158,8 +347,9 @@
 
     <div class="sidebar-footer">
         {% if is_authenticated %}
-            <div style="display:flex; align-items:center; justify-content:space-between;">
-                <div>
+            <div class="user-profile">
+                <div class="avatar">{{ username|slice:":2"|upper }}</div>
+                <div style="flex:1;">
                     <div style="font-size:14px; font-weight:700;">{{ username }}</div>
                     <div style="font-size:12px; color:var(--text-muted);">{% if is_premium %}Pro Member{% else %}Free Plan{% endif %}</div>
                 </div>
@@ -176,11 +366,11 @@
 
 <main class="main-content">
     <header class="top-bar">
-        <button class="toggle-btn" onclick="toggleSidebar()">
+        <button class="toggle-btn" onclick="toggleSidebar()" title="Toggle Sidebar">
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12h18M3 6h18M3 18h18"/></svg>
         </button>
 
-        <div style="font-size: 13px; color: var(--text-muted); font-weight: 500;">
+        <div class="top-center-plan">
             <span>Free plan</span> • <span class="upgrade-link" onclick="openUpgradeModal()">Upgrade</span>
         </div>
 
@@ -189,7 +379,13 @@
 
     <div class="chat-container" id="chatContainer">
         <div class="welcome-box" id="welcomeBox">
-            <div class="hero-logo-badge">SD AGENT</div>
+            <!-- Center Hero Monogram Logo -->
+            <div style="width: 68px; height: 68px; background: #0E0F12; border-radius: 20px; display: flex; align-items: center; justify-content: center; box-shadow: 0 10px 25px rgba(0,0,0,0.15); margin-bottom: 8px;">
+                <svg width="42" height="42" viewBox="0 0 100 100" fill="none">
+                    <path d="M 38 28 C 24 28 22 42 36 48 C 50 54 48 72 32 72 C 24 72 20 66 18 60" stroke="#8B8EFF" stroke-width="11" stroke-linecap="round" fill="none"/>
+                    <path d="M 48 25 L 48 75 C 78 75 78 25 48 25 Z" stroke="#8B8EFF" stroke-width="11" stroke-linejoin="round" fill="none"/>
+                </svg>
+            </div>
             <h1 class="welcome-title">Hey there, {{ username|default:"Explorer" }}</h1>
             <p class="welcome-subtitle" id="dynamicSubtitle"></p>
         </div>
@@ -202,7 +398,15 @@
             <textarea class="chat-input" id="userInput" placeholder="Ask SD AGENT anything..." rows="1" onkeydown="handleKeyDown(event)"></textarea>
             <div class="input-bottom-row">
                 <div class="left-actions">
-                    <button class="icon-btn" title="Add File" onclick="alert('Feature coming soon!')"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg></button>
+                    <button class="icon-btn" title="Add File / Context" onclick="alert('File Upload feature coming soon!')">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+                    </button>
+                    <button class="icon-btn" title="Upload Image" onclick="alert('Image analysis coming soon!')">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+                    </button>
+                    <button class="icon-btn" title="Google Drive (Soon)" onclick="alert('Google Drive integration coming soon!')">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 19h20L12 2z"/></svg>
+                    </button>
                 </div>
                 <button class="btn-send" id="btnSend" onclick="sendMessage()">Send</button>
             </div>
@@ -210,28 +414,42 @@
     </div>
 </main>
 
-<!-- Pricing Modal -->
+<!-- Pricing Plans Modal -->
 <div class="modal" id="upgradeModal">
     <div class="modal-card">
         <div style="display:flex; justify-content:space-between; align-items:center;">
             <h2 style="font-family:'Space Grotesk'; font-size:22px;">Upgrade to SD AGENT Pro ⚡</h2>
             <button onclick="closeUpgradeModal()" style="background:none; border:none; cursor:pointer; font-size:20px;">✕</button>
         </div>
+        <p style="color:var(--text-muted); font-size:14px; margin-top:4px;">Unlock advanced AI reasoning, image generation & live search.</p>
+
         <div class="plan-grid">
             <div class="plan-box">
                 <div>
-                    <h3>Free Plan</h3>
-                    <div style="font-size:24px; font-weight:700; margin:12px 0;">₹0</div>
-                    <p style="font-size:13px; color:#52525B;">8 Messages / 4 Hours limit</p>
+                    <h3 style="font-size:18px;">Free Plan</h3>
+                    <div style="font-size:24px; font-weight:700; margin:12px 0;">₹0 <span style="font-size:12px; color:var(--text-muted); font-weight:400;">/ forever</span></div>
+                    <ul style="font-size:13px; color:#52525B; line-height:2; list-style:none;">
+                        <li>✓ Standard AI Assistant</li>
+                        <li>✓ 8 Messages / 4 Hours limit</li>
+                        <li>✓ Saved Chat Sessions</li>
+                    </ul>
                 </div>
+                <button onclick="closeUpgradeModal()" style="width:100%; margin-top:20px; padding:10px; border:1px solid var(--border-color); background:#FFF; border-radius:10px; font-weight:600; cursor:pointer;">Current Plan</button>
             </div>
+
             <div class="plan-box pro">
+                <div class="badge-popular">BEST VALUE</div>
                 <div>
-                    <h3 style="color:#4F46E5;">SD AGENT Pro</h3>
-                    <div style="font-size:26px; font-weight:700; margin:12px 0;">₹109 <span style="font-size:12px;">/ 3 Months</span></div>
-                    <p style="font-size:13px; color:#374151;">✓ Unlimited Searches & Instant Answers</p>
+                    <h3 style="font-size:18px; color:#4F46E5;">SD AGENT Pro</h3>
+                    <div style="font-size:26px; font-weight:700; color:#18181B; margin:12px 0;">₹109 <span style="font-size:12px; color:var(--text-muted); font-weight:400;">/ 3 Months</span></div>
+                    <ul style="font-size:13px; color:#374151; line-height:2; list-style:none;">
+                        <li>✓ <strong>Unlimited Real-time Web Searches</strong></li>
+                        <li>✓ <strong>Generative AI Image Creation</strong></li>
+                        <li>✓ <strong>Ultra-Fast Response Speed</strong></li>
+                        <li>✓ Priority Code & Python Assistance</li>
+                    </ul>
                 </div>
-                <button onclick="alert('Payment gateway integrating!')" style="width:100%; margin-top:20px; padding:10px; background:#4F46E5; color:#FFF; border:none; border-radius:10px; font-weight:700; cursor:pointer;">Get Pro for ₹109</button>
+                <button onclick="alert('Payment Gateway Integrating Soon!')" style="width:100%; margin-top:20px; padding:10px; background:#4F46E5; color:#FFF; border:none; border-radius:10px; font-weight:700; cursor:pointer; box-shadow:0 4px 12px rgba(99,102,241,0.3);">Get 3 Months for ₹109</button>
             </div>
         </div>
     </div>
@@ -239,16 +457,24 @@
 
 <script>
     const IS_AUTHENTICATED = {% if is_authenticated %}true{% else %}false{% endif %};
-    let activeConversationId = null;
 
     function toggleSidebar() {
         const sidebar = document.getElementById('sidebar');
         const overlay = document.getElementById('sidebarOverlay');
-        if (window.innerWidth >= 900) sidebar.classList.toggle('collapsed');
-        else { sidebar.classList.toggle('active'); overlay.classList.toggle('active'); }
+        if (window.innerWidth >= 900) {
+            sidebar.classList.toggle('collapsed');
+        } else {
+            sidebar.classList.toggle('active');
+            overlay.classList.toggle('active');
+        }
     }
 
-    const phrases = ["How can I help you today?", "Let's build something extraordinary.", "What's on your mind today?"];
+    const phrases = [
+        "How can I help you today?",
+        "Let's build something extraordinary.",
+        "Need help with code, ideas, or analysis?",
+        "What's on your mind today?"
+    ];
     let phraseIdx = 0, charIdx = 0, isDeleting = false;
     const subEl = document.getElementById('dynamicSubtitle');
 
@@ -276,7 +502,6 @@
         }
     }
 
-    /* Rate Limiting Engine */
     function checkRateLimits() {
         const now = Date.now();
         const limitBanner = document.getElementById('limitBanner');
@@ -288,8 +513,7 @@
             if (guestCount >= 3) {
                 limitBanner.style.display = 'block';
                 limitBanner.innerHTML = 'You reached the 3 free search limit. <a href="/signup/" style="color:#991B1B; font-weight:700;">Sign up to continue!</a>';
-                userInput.disabled = true;
-                btnSend.disabled = true;
+                userInput.disabled = true; btnSend.disabled = true;
                 return false;
             }
         } else {
@@ -297,12 +521,9 @@
             if (now < cooldownUntil) {
                 const resetDate = new Date(cooldownUntil);
                 const timeString = resetDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-
                 limitBanner.style.display = 'block';
-                userInput.disabled = true;
-                btnSend.disabled = true;
+                userInput.disabled = true; btnSend.disabled = true;
 
-                // Live Countdown Timer
                 setInterval(() => {
                     const remaining = cooldownUntil - Date.now();
                     if (remaining <= 0) {
@@ -313,7 +534,7 @@
                         const hrs = Math.floor(remaining / (1000 * 60 * 60));
                         const mins = Math.floor((remaining % (1000 * 60 * 60)) / (1000 * 60));
                         const secs = Math.floor((remaining % (1000 * 60)) / 1000);
-                        limitBanner.innerHTML = `Message limit reached! Next search available in <strong>${hrs}h ${mins}m ${secs}s</strong> (at ${timeString})`;
+                        limitBanner.innerHTML = `Message limit reached! Available again in <strong>${hrs}h ${mins}m ${secs}s</strong> (${timeString})`;
                     }
                 }, 1000);
                 return false;
@@ -330,7 +551,7 @@
             let count = parseInt(localStorage.getItem('user_msg_count') || '0') + 1;
             localStorage.setItem('user_msg_count', count.toString());
             if (count >= 8) {
-                const cooldownUntil = Date.now() + (4 * 60 * 60 * 1000); // 4 Hours
+                const cooldownUntil = Date.now() + (4 * 60 * 60 * 1000);
                 localStorage.setItem('user_cooldown_until', cooldownUntil.toString());
             }
         }
@@ -347,7 +568,6 @@
 
         const metaDiv = document.createElement('div');
         metaDiv.className = 'msg-meta';
-
         const timeSpan = document.createElement('span');
         timeSpan.innerText = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
@@ -362,7 +582,6 @@
 
         metaDiv.appendChild(timeSpan);
         metaDiv.appendChild(copyBtn);
-
         wrapper.appendChild(msgDiv);
         wrapper.appendChild(metaDiv);
         list.appendChild(wrapper);
