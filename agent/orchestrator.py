@@ -58,11 +58,10 @@ class AgentOrchestrator:
         try:
             genai.configure(api_key=self.api_key)
 
-            # Try candidate models in order of performance and availability
+            # Standard supported models list
             candidate_models = [
-                "gemini-2.0-flash",
+                "gemini-1.5-flash",
                 "gemini-1.5-pro",
-                "gemini-1.5-flash-8b",
             ]
 
             model = None
@@ -74,7 +73,6 @@ class AgentOrchestrator:
                         model_name=model_name,
                         system_instruction=SYSTEM_INSTRUCTIONS
                     )
-                    # Simple test send to check model availability
                     model = m
                     break
                 except Exception as ex:
@@ -83,7 +81,7 @@ class AgentOrchestrator:
 
             if not model:
                 model = genai.GenerativeModel(
-                    model_name="gemini-1.5-pro",
+                    model_name="gemini-1.5-flash",
                     system_instruction=SYSTEM_INSTRUCTIONS
                 )
 
