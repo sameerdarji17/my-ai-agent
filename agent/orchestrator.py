@@ -19,7 +19,7 @@ You are SD AGENT, an intelligent, helpful, and highly versatile AI partner.
 CRITICAL RESPONSE RULES:
 1. NEVER display raw function code, JSON objects, internal tool structures, or tags like '<function/web_search ...>' or '<function=...>' in your final conversational response to the user.
 2. Tool execution must happen silently in the backend. Once you retrieve tool results, synthesize the information and respond in clear, clean, natural language.
-3. Provide real, accurate, and comprehensive answers.
+3. Provide real, accurate, and comprehensive answers in clean plain text.
 """
 
 
@@ -40,6 +40,7 @@ class AgentOrchestrator:
         return history
 
     def run(self, user_message):
+        # Save user message
         Message.objects.create(
             conversation=self.conversation,
             role="user",
@@ -47,12 +48,12 @@ class AgentOrchestrator:
         )
 
         if not GENAI_AVAILABLE:
-            reply_text = "Server configuration error: 'google-generativeai' package is not installed."
+            reply_text = "Error: 'google-generativeai' package is not installed on server."
             Message.objects.create(conversation=self.conversation, role="assistant", content=reply_text)
             return {"reply": reply_text, "tool_trace": []}
 
         if not self.api_key:
-            reply_text = "API Key error: GEMINI_API_KEY is missing in settings."
+            reply_text = "Error: GEMINI_API_KEY is not set in Railway environment variables."
             Message.objects.create(conversation=self.conversation, role="assistant", content=reply_text)
             return {"reply": reply_text, "tool_trace": []}
 
@@ -63,17 +64,19 @@ class AgentOrchestrator:
                 system_instruction=SYSTEM_INSTRUCTIONS
             )
 
+            # Reconstruct history excluding the current message
             history = self._get_history()[:-1]
             chat = model.start_chat(history=history)
 
             response = chat.send_message(user_message)
             reply_text = response.text or ""
 
+            # Clean any leftover function tags
             if "<function" in reply_text:
                 import re
                 reply_text = re.sub(r'<function/?[^>]+>', '', reply_text).strip()
                 if not reply_text:
-                    reply_text = "Aapke request ke mutabiq jankari nikal li gayi hai."
+                    reply_text = "Aapke request ke anusar jankari mil gayi hai."
 
             Message.objects.create(
                 conversation=self.conversation,
@@ -85,6 +88,6 @@ class AgentOrchestrator:
 
         except Exception as e:
             logger.error(f"Error in AgentOrchestrator: {e}", exc_info=True)
-            fallback_reply = "Kucch technical error aayi h, kripya dubara try karein."
-            Message.objects.create(conversation=self.conversation, role="assistant", content=fallback_reply)
-            return {"reply": fallback_reply, "tool_trace": []}
+            detailed_error = f"API Error: {str(e)}"
+            Message.objects.create(conversation=self.conversation, role="assistant", content=detailed_error)
+            return {"reply": detailed_error, "tool_trace": []}
