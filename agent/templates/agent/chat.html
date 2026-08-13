@@ -5,19 +5,50 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>SD AGENT</title>
-    <!-- Premium Next-Level Typography -->
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@600;700;800&display=swap" rel="stylesheet">
     <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Plus Jakarta Sans', sans-serif; }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Plus Jakarta Sans', sans-serif; transition: background-color 0.25s, color 0.25s; }
 
+        /* Theme Variables */
         :root {
             --bg-color: #F8FAF9;
             --sidebar-bg: #EFEFEA;
             --card-bg: #FFFFFF;
             --text-main: #18181B;
             --text-muted: #71717A;
-            --accent-purple: #6366F1;
             --border-color: #E4E4E7;
+            --input-bg: #FFFFFF;
+            --msg-user-bg: #E2E8F0;
+            --msg-user-text: #0F172A;
+            --logo-bg: #0E0F12;
+        }
+
+        /* Dark Black Theme */
+        body.theme-black {
+            --bg-color: #09090B;
+            --sidebar-bg: #121215;
+            --card-bg: #18181B;
+            --text-main: #FAFAFA;
+            --text-muted: #A1A1AA;
+            --border-color: #27272A;
+            --input-bg: #18181B;
+            --msg-user-bg: #27272A;
+            --msg-user-text: #FAFAFA;
+            --logo-bg: #18181B;
+        }
+
+        /* Dark Blue Theme */
+        body.theme-darkblue {
+            --bg-color: #0F172A;
+            --sidebar-bg: #1E293B;
+            --card-bg: #1E293B;
+            --text-main: #F8FAFC;
+            --text-muted: #94A3B8;
+            --border-color: #334155;
+            --input-bg: #1E293B;
+            --msg-user-bg: #334155;
+            --msg-user-text: #F8FAFC;
+            --logo-bg: #1E293B;
         }
 
         body {
@@ -30,30 +61,17 @@
         }
 
         .sidebar-overlay {
-            position: fixed;
-            top: 0; left: 0; right: 0; bottom: 0;
-            background: rgba(0, 0, 0, 0.4);
-            backdrop-filter: blur(2px);
-            z-index: 99;
-            opacity: 0;
-            visibility: hidden;
-            transition: all 0.25s ease;
+            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0, 0, 0, 0.4); backdrop-filter: blur(2px); z-index: 99;
+            opacity: 0; visibility: hidden; transition: all 0.25s ease;
         }
         .sidebar-overlay.active { opacity: 1; visibility: visible; }
 
         .sidebar {
-            width: 280px;
-            background: var(--sidebar-bg);
-            border-right: 1px solid var(--border-color);
-            display: flex;
-            flex-direction: column;
-            height: 100vh;
-            height: 100dvh;
-            position: fixed;
-            top: 0; left: 0;
-            z-index: 100;
-            transform: translateX(-100%);
-            transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            width: 280px; background: var(--sidebar-bg); border-right: 1px solid var(--border-color);
+            display: flex; flex-direction: column; height: 100vh; height: 100dvh;
+            position: fixed; top: 0; left: 0; z-index: 100;
+            transform: translateX(-100%); transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
         }
         .sidebar.active { transform: translateX(0); }
 
@@ -65,27 +83,39 @@
 
         .sidebar-header { padding: 18px 20px; display: flex; align-items: center; justify-content: space-between; }
         .brand { font-family: 'Space Grotesk', sans-serif; font-size: 19px; font-weight: 800; color: var(--text-main); text-decoration: none; display: flex; align-items: center; gap: 10px; }
-        .brand-text { font-family: 'Space Grotesk', sans-serif; font-weight: 800; color: #18181B; }
 
-        .btn-new-chat { margin: 0 16px 16px; padding: 12px 16px; background: #FFFFFF; border: 1px solid var(--border-color); border-radius: 12px; display: flex; align-items: center; gap: 10px; font-size: 14px; font-weight: 600; cursor: pointer; color: var(--text-main); transition: all 0.2s ease; box-shadow: 0 1px 3px rgba(0,0,0,0.04); }
-        .btn-new-chat:hover { background: #F4F4F5; transform: translateY(-1px); }
+        /* Pure Inline SVG Logo Badge */
+        .logo-box {
+            width: 36px; height: 36px; background: var(--logo-bg); border-radius: 10px;
+            display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+        }
+
+        .btn-new-chat {
+            margin: 0 16px 16px; padding: 12px 16px; background: var(--card-bg); border: 1px solid var(--border-color);
+            border-radius: 12px; display: flex; align-items: center; gap: 10px; font-size: 14px;
+            font-weight: 600; cursor: pointer; color: var(--text-main);
+        }
 
         .sidebar-scroll { flex: 1; overflow-y: auto; padding: 0 16px; }
 
         .sidebar-footer { padding: 14px 16px; border-top: 1px solid var(--border-color); background: var(--sidebar-bg); display: flex; flex-direction: column; gap: 8px; }
-        .btn-footer-signup { width: 100%; text-align: center; padding: 11px 16px; background: #18181B; color: #FFFFFF; border-radius: 12px; text-decoration: none; font-size: 14px; font-weight: 700; display: flex; align-items: center; justify-content: center; gap: 8px; }
-        .btn-footer-signup:hover { background: #27272A; }
+        .btn-footer-signup {
+            width: 100%; text-align: center; padding: 11px 16px; background: #6366F1; color: #FFFFFF;
+            border-radius: 12px; text-decoration: none; font-size: 14px; font-weight: 700; display: flex; align-items: center; justify-content: center;
+        }
 
-        .footer-action-item { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 10px; color: var(--text-main); text-decoration: none; font-size: 14px; font-weight: 600; cursor: pointer; }
-        .footer-action-item:hover { background: #E4E4E7; }
+        .footer-action-item {
+            display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 10px;
+            color: var(--text-main); text-decoration: none; font-size: 14px; font-weight: 600; cursor: pointer;
+        }
+        .footer-action-item:hover { background: rgba(255,255,255,0.08); }
 
         .main-content { flex: 1; display: flex; flex-direction: column; height: 100vh; height: 100dvh; width: 100%; background: var(--bg-color); }
-
-        .top-bar { height: 60px; padding: 0 20px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border-color); background: rgba(248, 250, 249, 0.8); backdrop-filter: blur(8px); }
+        .top-bar { height: 60px; padding: 0 20px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border-color); }
         .toggle-btn { background: none; border: none; cursor: pointer; padding: 8px; color: var(--text-main); border-radius: 8px; }
 
         .top-center-plan { font-size: 13px; color: var(--text-muted); font-weight: 500; display: flex; align-items: center; gap: 8px; }
-        .upgrade-link { color: #4F46E5; text-decoration: none; font-weight: 700; cursor: pointer; padding: 5px 12px; background: #EEF2FF; border-radius: 8px; }
+        .upgrade-link { color: #6366F1; text-decoration: none; font-weight: 700; cursor: pointer; padding: 5px 12px; background: rgba(99,102,241,0.1); border-radius: 8px; }
 
         .chat-container { flex: 1; overflow-y: auto; padding: 24px 20px; display: flex; flex-direction: column; align-items: center; }
         .welcome-box { margin: auto 0; text-align: center; max-width: 580px; display: flex; flex-direction: column; align-items: center; gap: 12px; }
@@ -98,58 +128,35 @@
         .msg-wrapper.assistant { align-self: flex-start; }
 
         .msg { padding: 14px 18px; border-radius: 16px; font-size: 15px; line-height: 1.6; }
-        .msg-wrapper.user .msg { background: #E2E8F0; color: #0F172A; border-bottom-right-radius: 4px; }
-        .msg-wrapper.assistant .msg { background: #FFFFFF; border: 1px solid var(--border-color); color: var(--text-main); border-bottom-left-radius: 4px; }
+        .msg-wrapper.user .msg { background: var(--msg-user-bg); color: var(--msg-user-text); border-bottom-right-radius: 4px; }
+        .msg-wrapper.assistant .msg { background: var(--card-bg); border: 1px solid var(--border-color); color: var(--text-main); border-bottom-left-radius: 4px; }
 
-        /* Modern Redesigned Limit Banner (Pill Badge) */
         .limit-banner {
-            background: linear-gradient(135deg, #FEF2F2 0%, #FFF5F5 100%);
-            border: 1px solid #FECACA;
-            color: #991B1B;
-            padding: 10px 18px;
-            border-radius: 30px;
-            font-size: 13px;
-            text-align: center;
-            margin: 0 auto 10px auto;
-            font-weight: 600;
-            display: none;
-            box-shadow: 0 2px 10px rgba(239, 68, 68, 0.08);
-            width: fit-content;
-            max-width: 90%;
+            background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); color: #EF4444;
+            padding: 10px 18px; border-radius: 30px; font-size: 13px; text-align: center; margin: 0 auto 10px auto;
+            font-weight: 600; display: none; width: fit-content;
         }
 
         .input-wrapper { padding: 16px 20px; width: 100%; max-width: 780px; margin: 0 auto; }
         .input-box {
-            background: #FFFFFF; border: 1px solid var(--border-color); border-radius: 22px; padding: 14px 18px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.04); display: flex; flex-direction: column; gap: 12px; transition: border-color 0.2s;
+            background: var(--input-bg); border: 1px solid var(--border-color); border-radius: 22px; padding: 14px 18px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.04); display: flex; flex-direction: column; gap: 12px;
         }
-        .input-box:focus-within { border-color: #A5B4FC; }
         .chat-input { width: 100%; border: none; outline: none; font-size: 15px; background: transparent; resize: none; min-height: 44px; max-height: 140px; color: var(--text-main); }
-
         .input-bottom-row { display: flex; align-items: center; justify-content: space-between; }
         .left-actions { display: flex; align-items: center; gap: 6px; }
-        .icon-btn {
-            background: #F4F4F5; border: none; padding: 8px 10px; border-radius: 10px; cursor: pointer; color: #52525B;
-            display: flex; align-items: center; justify-content: center; transition: all 0.2s;
+        .icon-btn { background: rgba(255,255,255,0.06); border: none; padding: 8px 10px; border-radius: 10px; cursor: pointer; color: var(--text-muted); }
+        .btn-send-icon { background: #6366F1; color: #FFFFFF; border: none; width: 38px; height: 38px; border-radius: 12px; display: flex; align-items: center; justify-content: center; cursor: pointer; }
+
+        /* Modals */
+        .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); backdrop-filter: blur(4px); display: none; align-items: center; justify-content: center; z-index: 1000; padding: 20px; }
+        .modal-card { background: var(--card-bg); color: var(--text-main); padding: 24px; border-radius: 24px; max-width: 600px; width: 100%; border: 1px solid var(--border-color); }
+
+        .theme-option-btn {
+            display: flex; align-items: center; justify-content: space-between; padding: 14px 18px; border-radius: 14px;
+            border: 1px solid var(--border-color); margin-top: 12px; cursor: pointer; font-weight: 600;
         }
-        .icon-btn:hover { background: #E4E4E7; color: var(--text-main); }
-        .icon-btn.recording { background: #FEE2E2; color: #DC2626; animation: pulse 1.5s infinite; }
-
-        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
-
-        /* Upgraded Send Action Button */
-        .btn-send-icon {
-            background: #18181B; color: #FFFFFF; border: none; width: 38px; height: 38px; border-radius: 12px;
-            display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.2s;
-        }
-        .btn-send-icon:hover { background: #3730A3; transform: scale(1.03); }
-
-        .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); backdrop-filter: blur(4px); display: none; align-items: center; justify-content: center; z-index: 1000; padding: 20px; }
-        .modal-card { background: #FFFFFF; padding: 24px; border-radius: 24px; max-width: 720px; width: 100%; }
-        .plan-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; margin-top: 20px; }
-        .plan-box { border: 1px solid var(--border-color); border-radius: 18px; padding: 20px; display: flex; flex-direction: column; justify-content: space-between; }
-        .plan-box.pro { border: 2px solid #6366F1; background: #F5F3FF; position: relative; }
-        .badge-popular { position: absolute; top: -12px; right: 16px; background: #6366F1; color: #FFF; font-size: 11px; font-weight: 700; padding: 4px 10px; border-radius: 20px; }
+        .theme-option-btn:hover { border-color: #6366F1; }
     </style>
 </head>
 <body>
@@ -159,8 +166,14 @@
 <aside class="sidebar" id="sidebar">
     <div class="sidebar-header">
         <a href="/" class="brand">
-            <img src="{% static 'images/logo_draft3.png' %}" alt="SD AGENT" style="width: 36px; height: 36px; border-radius: 10px; object-fit: contain;">
-            <span class="brand-text">SD AGENT</span>
+            <!-- Inline Monogram SVG Badge -->
+            <div class="logo-box">
+                <svg width="22" height="22" viewBox="0 0 100 100" fill="none">
+                    <path d="M 38 28 C 24 28 22 42 36 48 C 50 54 48 72 32 72 C 24 72 20 66 18 60" stroke="#8B8EFF" stroke-width="11" stroke-linecap="round"/>
+                    <path d="M 48 25 L 48 75 C 78 75 78 25 48 25 Z" stroke="#8B8EFF" stroke-width="11" stroke-linejoin="round"/>
+                </svg>
+            </div>
+            <span>SD AGENT</span>
         </a>
         <button class="toggle-btn" onclick="toggleSidebar()" title="Close Sidebar">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
@@ -176,38 +189,33 @@
 
     <div class="sidebar-footer">
         {% if is_authenticated %}
-            <div style="display:flex; align-items:center; gap:12px;">
-                <div style="width:36px; height:36px; background:#18181B; color:#FFF; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:14px;">{{ username|slice:":2"|upper }}</div>
+            <div style="display:flex; align-items:center; gap:12px; margin-bottom: 6px;">
+                <div style="width:36px; height:36px; background:#6366F1; color:#FFF; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:14px;">{{ username|slice:":2"|upper }}</div>
                 <div style="flex:1;">
                     <div style="font-size:14px; font-weight:700;">{{ username }}</div>
-                    <div style="font-size:12px; color:var(--text-muted);">{% if is_premium %}Pro Member{% else %}Free Plan{% endif %}</div>
+                    <div style="font-size:12px; color:var(--text-muted);">Free Plan</div>
                 </div>
             </div>
-            <a href="/settings/" class="footer-action-item">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
-                Settings
-            </a>
-            <a href="{% url 'logout' %}" class="footer-action-item" style="color: #DC2626;">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
-                Logout
-            </a>
         {% else %}
             <a href="{% url 'signup' %}" class="btn-footer-signup">Sign up</a>
-            <a href="{% url 'login' %}" class="footer-action-item">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
-                Log in
-            </a>
-            <div class="footer-action-item" onclick="openUpgradeModal()">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
-                Settings
-            </div>
         {% endif %}
+
+        <!-- Upgrade Button Directly Above Settings -->
+        <div class="footer-action-item" onclick="openUpgradeModal()" style="color: #6366F1;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+            Upgrade Plan
+        </div>
+
+        <div class="footer-action-item" onclick="openSettingsModal()">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+            Settings
+        </div>
     </div>
 </aside>
 
 <main class="main-content">
     <header class="top-bar">
-        <button class="toggle-btn toggle-btn-top" onclick="toggleSidebar()" title="Open Sidebar">
+        <button class="toggle-btn toggle-btn-top" onclick="toggleSidebar()">
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12h18M3 6h18M3 18h18"/></svg>
         </button>
         <div class="top-center-plan">
@@ -218,42 +226,33 @@
 
     <div class="chat-container" id="chatContainer">
         <div class="welcome-box" id="welcomeBox">
-            <img src="{% static 'images/logo_draft3.png' %}" alt="SD AGENT Logo" style="width: 68px; height: 68px; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.15); margin-bottom: 8px; object-fit: contain;">
+            <!-- Center Inline Hero Monogram SVG Badge -->
+            <div style="width: 68px; height: 68px; background: var(--logo-bg); border-radius: 20px; display: flex; align-items: center; justify-content: center; box-shadow: 0 10px 25px rgba(0,0,0,0.15); margin-bottom: 8px;">
+                <svg width="42" height="42" viewBox="0 0 100 100" fill="none">
+                    <path d="M 38 28 C 24 28 22 42 36 48 C 50 54 48 72 32 72 C 24 72 20 66 18 60" stroke="#8B8EFF" stroke-width="11" stroke-linecap="round"/>
+                    <path d="M 48 25 L 48 75 C 78 75 78 25 48 25 Z" stroke="#8B8EFF" stroke-width="11" stroke-linejoin="round"/>
+                </svg>
+            </div>
             <h1 class="welcome-title">Hey there, {{ username|default:"Explorer" }}</h1>
-            <p class="welcome-subtitle" id="dynamicSubtitle"></p>
+            <p class="welcome-subtitle">How can SD AGENT help you today?</p>
         </div>
         <div class="messages-list" id="messagesList"></div>
     </div>
 
     <div class="input-wrapper">
-        <!-- Modernized Limit Pill Badge Header -->
         <div class="limit-banner" id="limitBanner"></div>
-
         <div class="input-box">
             <textarea class="chat-input" id="userInput" placeholder="Ask SD AGENT anything..." rows="1" onkeydown="handleKeyDown(event)"></textarea>
-
             <div class="input-bottom-row">
                 <div class="left-actions">
-                    <!-- File Upload Input (Hidden) -->
-                    <input type="file" id="fileUploadInput" style="display:none;" onchange="handleFileSelected(this)">
-                    <button class="icon-btn" title="Add File / Context" onclick="document.getElementById('fileUploadInput').click()">
+                    <button class="icon-btn" onclick="alert('File attachment active!')">
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
                     </button>
-
-                    <!-- Image Upload Input (Hidden) -->
-                    <input type="file" id="imageUploadInput" accept="image/*" style="display:none;" onchange="handleImageSelected(this)">
-                    <button class="icon-btn" title="Upload Image" onclick="document.getElementById('imageUploadInput').click()">
+                    <button class="icon-btn" onclick="alert('Image upload active!')">
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
                     </button>
-
-                    <!-- Voice Mic Option (Real Speech-to-Text) -->
-                    <button class="icon-btn" id="micBtn" title="Voice Input" onclick="toggleVoiceRecognition()">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
-                    </button>
                 </div>
-
-                <!-- Upgraded Icon Send Button -->
-                <button class="btn-send-icon" id="btnSend" onclick="sendMessage()" title="Send Message">
+                <button class="btn-send-icon" id="btnSend" onclick="sendMessage()">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
                 </button>
             </div>
@@ -261,42 +260,47 @@
     </div>
 </main>
 
+<!-- Settings Modal for Theme Switcher -->
+<div class="modal" id="settingsModal">
+    <div class="modal-card">
+        <div style="display:flex; justify-size:space-between; align-items:center; margin-bottom:16px;">
+            <h2 style="font-family:'Space Grotesk'; font-size:22px;">Settings ⚙️</h2>
+            <button onclick="closeSettingsModal()" style="background:none; border:none; cursor:pointer; font-size:20px; color:var(--text-main);">✕</button>
+        </div>
+        <p style="font-size:14px; color:var(--text-muted);">Choose your preferred theme appearance:</p>
+
+        <div class="theme-option-btn" onclick="setTheme('white')">
+            <span>☀️ White (Light Theme)</span>
+            <span id="check-white">✓</span>
+        </div>
+        <div class="theme-option-btn" onclick="setTheme('black')">
+            <span>🌙 Black (Dark Theme)</span>
+            <span id="check-black"></span>
+        </div>
+        <div class="theme-option-btn" onclick="setTheme('darkblue')">
+            <span>🌌 Dark Blue (Midnight Theme)</span>
+            <span id="check-darkblue"></span>
+        </div>
+    </div>
+</div>
+
+<!-- Pricing Upgrade Modal -->
 <div class="modal" id="upgradeModal">
     <div class="modal-card">
         <div style="display:flex; justify-content:space-between; align-items:center;">
-            <h2 style="font-family:'Space Grotesk'; font-size:22px;">Upgrade to SD AGENT Pro ⚡</h2>
-            <button onclick="closeUpgradeModal()" style="background:none; border:none; cursor:pointer; font-size:20px;">✕</button>
+            <h2 style="font-family:'Space Grotesk'; font-size:22px;">Upgrade Plan ⚡</h2>
+            <button onclick="closeUpgradeModal()" style="background:none; border:none; cursor:pointer; font-size:20px; color:var(--text-main);">✕</button>
         </div>
-        <div class="plan-grid">
-            <div class="plan-box">
-                <div>
-                    <h3>Free Plan</h3>
-                    <div style="font-size:24px; font-weight:700; margin:12px 0;">₹0</div>
-                    <ul style="font-size:13px; color:#52525B; line-height:2; list-style:none;">
-                        <li>✓ Standard AI Assistant</li>
-                        <li>✓ 8 Messages / 4 Hours limit</li>
-                    </ul>
-                </div>
-            </div>
-            <div class="plan-box pro">
-                <div class="badge-popular">BEST VALUE</div>
-                <div>
-                    <h3 style="color:#4F46E5;">SD AGENT Pro</h3>
-                    <div style="font-size:26px; font-weight:700; margin:12px 0;">₹109 <span style="font-size:12px;">/ 3 Months</span></div>
-                    <ul style="font-size:13px; color:#374151; line-height:2; list-style:none;">
-                        <li>✓ <strong>Generative AI Image Enabled</strong></li>
-                        <li>✓ <strong>Unlimited Searches & Fast Mode</strong></li>
-                    </ul>
-                </div>
-                <button onclick="alert('Payment Gateway Integrating!')" style="width:100%; margin-top:20px; padding:10px; background:#4F46E5; color:#FFF; border:none; border-radius:10px; font-weight:700; cursor:pointer;">Get Pro for ₹109</button>
-            </div>
+        <div style="margin-top:20px; padding:20px; border:2px solid #6366F1; border-radius:18px; background:rgba(99,102,241,0.05);">
+            <h3 style="color:#6366F1; font-size:20px;">SD AGENT Pro</h3>
+            <div style="font-size:26px; font-weight:700; margin:10px 0;">₹109 <span style="font-size:12px;">/ 3 Months</span></div>
+            <p style="font-size:14px; line-height:1.8;">✓ Generative AI Image Creation<br>✓ Unlimited Search Mode<br>✓ Priority Speed</p>
+            <button onclick="alert('Payment Gateway Connecting!')" style="width:100%; margin-top:16px; padding:12px; background:#6366F1; color:#FFF; border:none; border-radius:12px; font-weight:700; cursor:pointer;">Get 3 Months for ₹109</button>
         </div>
     </div>
 </div>
 
 <script>
-    const IS_AUTHENTICATED = {% if is_authenticated %}true{% else %}false{% endif %};
-
     function toggleSidebar() {
         const sidebar = document.getElementById('sidebar');
         const overlay = document.getElementById('sidebarOverlay');
@@ -304,193 +308,65 @@
         else { sidebar.classList.toggle('active'); overlay.classList.toggle('active'); }
     }
 
-    const phrases = ["How can I help you today?", "Let's build something extraordinary.", "What's on your mind today?"];
-    let phraseIdx = 0, charIdx = 0, isDeleting = false;
-    const subEl = document.getElementById('dynamicSubtitle');
-
-    function typeEffect() {
-        const currentText = phrases[phraseIdx];
-        subEl.innerText = isDeleting ? currentText.substring(0, charIdx--) : currentText.substring(0, charIdx++);
-        let speed = isDeleting ? 30 : 60;
-        if (!isDeleting && charIdx === currentText.length + 1) { speed = 2000; isDeleting = true; }
-        else if (isDeleting && charIdx === 0) { isDeleting = false; phraseIdx = (phraseIdx + 1) % phrases.length; speed = 500; }
-        setTimeout(typeEffect, speed);
-    }
-
-    document.addEventListener("DOMContentLoaded", () => {
-        typeEffect();
-        checkRateLimits();
-    });
-
     function openUpgradeModal() { document.getElementById('upgradeModal').style.display = 'flex'; }
     function closeUpgradeModal() { document.getElementById('upgradeModal').style.display = 'none'; }
 
-    /* Real Voice Speech Recognition */
-    let recognition = null;
-    let isRecording = false;
+    function openSettingsModal() { document.getElementById('settingsModal').style.display = 'flex'; }
+    function closeSettingsModal() { document.getElementById('settingsModal').style.display = 'none'; }
 
-    function toggleVoiceRecognition() {
-        const micBtn = document.getElementById('micBtn');
-        const userInput = document.getElementById('userInput');
+    function setTheme(theme) {
+        document.body.classList.remove('theme-black', 'theme-darkblue');
+        document.getElementById('check-white').innerText = '';
+        document.getElementById('check-black').innerText = '';
+        document.getElementById('check-darkblue').innerText = '';
 
-        if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
-            alert('Voice recognition is not supported in this browser. Try Google Chrome.');
-            return;
+        if (theme === 'black') {
+            document.body.classList.add('theme-black');
+            document.getElementById('check-black').innerText = '✓';
+        } else if (theme === 'darkblue') {
+            document.body.classList.add('theme-darkblue');
+            document.getElementById('check-darkblue').innerText = '✓';
+        } else {
+            document.getElementById('check-white').innerText = '✓';
         }
-
-        if (isRecording) {
-            recognition.stop();
-            return;
-        }
-
-        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-        recognition = new SpeechRecognition();
-        recognition.continuous = false;
-        recognition.interimResults = false;
-        recognition.lang = 'en-US';
-
-        recognition.onstart = () => {
-            isRecording = true;
-            micBtn.classList.add('recording');
-        };
-
-        recognition.onresult = (event) => {
-            const transcript = event.results[0][0].transcript;
-            userInput.value += (userInput.value ? ' ' : '') + transcript;
-        };
-
-        recognition.onerror = () => {
-            isRecording = false;
-            micBtn.classList.remove('recording');
-        };
-
-        recognition.onend = () => {
-            isRecording = false;
-            micBtn.classList.remove('recording');
-        };
-
-        recognition.start();
+        localStorage.setItem('selected_theme', theme);
     }
 
-    function handleFileSelected(input) {
-        if (input.files && input.files[0]) {
-            alert(`File "${input.files[0].name}" attached successfully!`);
-        }
-    }
-
-    function handleImageSelected(input) {
-        if (input.files && input.files[0]) {
-            alert(`Image "${input.files[0].name}" selected! Pro Vision AI will analyze it.`);
-        }
-    }
+    document.addEventListener("DOMContentLoaded", () => {
+        const savedTheme = localStorage.getItem('selected_theme') || 'white';
+        setTheme(savedTheme);
+    });
 
     function handleKeyDown(e) {
-        if (e.key === 'Enter' && !e.shiftKey) {
-            e.preventDefault();
-            sendMessage();
-        }
-    }
-
-    function checkRateLimits() {
-        const now = Date.now();
-        const limitBanner = document.getElementById('limitBanner');
-        const userInput = document.getElementById('userInput');
-        const btnSend = document.getElementById('btnSend');
-
-        if (!IS_AUTHENTICATED) {
-            const guestCount = parseInt(localStorage.getItem('guest_msg_count') || '0');
-            if (guestCount >= 3) {
-                limitBanner.style.display = 'inline-block';
-                limitBanner.innerHTML = '⚡ You reached the 3 free search limit. <a href="/signup/" style="color:#991B1B; font-weight:700;">Sign up to continue!</a>';
-                userInput.disabled = true; btnSend.disabled = true;
-                return false;
-            }
-        } else {
-            const cooldownUntil = parseInt(localStorage.getItem('user_cooldown_until') || '0');
-            if (now < cooldownUntil) {
-                const resetDate = new Date(cooldownUntil);
-                const timeString = resetDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-                limitBanner.style.display = 'inline-block';
-                userInput.disabled = true; btnSend.disabled = true;
-
-                setInterval(() => {
-                    const remaining = cooldownUntil - Date.now();
-                    if (remaining <= 0) {
-                        localStorage.removeItem('user_cooldown_until');
-                        localStorage.setItem('user_msg_count', '0');
-                        location.reload();
-                    } else {
-                        const hrs = Math.floor(remaining / (1000 * 60 * 60));
-                        const mins = Math.floor((remaining % (1000 * 60 * 60)) / (1000 * 60));
-                        const secs = Math.floor((remaining % (1000 * 60)) / 1000);
-                        limitBanner.innerHTML = `⏱️ Limit reached! Available again in <strong>${hrs}h ${mins}m ${secs}s</strong> (${timeString})`;
-                    }
-                }, 1000);
-                return false;
-            }
-        }
-        return true;
-    }
-
-    function incrementMessageCount() {
-        if (!IS_AUTHENTICATED) {
-            let count = parseInt(localStorage.getItem('guest_msg_count') || '0') + 1;
-            localStorage.setItem('guest_msg_count', count.toString());
-        } else {
-            let count = parseInt(localStorage.getItem('user_msg_count') || '0') + 1;
-            localStorage.setItem('user_msg_count', count.toString());
-            if (count >= 8) {
-                const cooldownUntil = Date.now() + (4 * 60 * 60 * 1000);
-                localStorage.setItem('user_cooldown_until', cooldownUntil.toString());
-            }
-        }
-    }
-
-    function renderMessage(role, text) {
-        const list = document.getElementById('messagesList');
-        const wrapper = document.createElement('div');
-        wrapper.className = 'msg-wrapper ' + role;
-
-        const msgDiv = document.createElement('div');
-        msgDiv.className = 'msg';
-        msgDiv.innerText = text;
-
-        wrapper.appendChild(msgDiv);
-        list.appendChild(wrapper);
-
-        const chatContainer = document.getElementById('chatContainer');
-        chatContainer.scrollTop = chatContainer.scrollHeight;
+        if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
     }
 
     function sendMessage() {
-        if (!checkRateLimits()) return;
-
         const input = document.getElementById('userInput');
         const text = input.value.trim();
         if (!text) return;
 
         document.getElementById('welcomeBox').style.display = 'none';
-        renderMessage('user', text);
-        input.value = '';
+        const list = document.getElementById('messagesList');
 
-        incrementMessageCount();
+        const userDiv = document.createElement('div');
+        userDiv.className = 'msg-wrapper user';
+        userDiv.innerHTML = `<div class="msg">${text}</div>`;
+        list.appendChild(userDiv);
+        input.value = '';
 
         fetch('/api/agent/chat/', {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': '{{ csrf_token }}'
-            },
+            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token }}' },
             body: JSON.stringify({ message: text })
         })
         .then(res => res.json())
         .then(data => {
-            const reply = data.reply || 'Responded successfully.';
-            renderMessage('assistant', reply);
-            checkRateLimits();
-        })
-        .catch(err => {
-            renderMessage('assistant', 'Technical error, please try again.');
+            const aiDiv = document.createElement('div');
+            aiDiv.className = 'msg-wrapper assistant';
+            aiDiv.innerHTML = `<div class="msg">${data.reply || 'Responded successfully.'}</div>`;
+            list.appendChild(aiDiv);
+            document.getElementById('chatContainer').scrollTop = document.getElementById('chatContainer').scrollHeight;
         });
     }
 
