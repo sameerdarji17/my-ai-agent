@@ -4,131 +4,211 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sign In — SD AGENT</title>
-    <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <title>Sign Up — SD AGENT</title>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@600;700;800&display=swap" rel="stylesheet">
     <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; }
-        body { background: #FAF8F5; color: #1F1E1C; min-height: 100vh; display: flex; flex-direction: column; }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Plus Jakarta Sans', sans-serif; }
 
-        .header { padding: 24px 32px; display: flex; align-items: center; justify-content: space-between; }
-        .logo { font-family: 'Instrument Serif', serif; font-size: 26px; font-weight: 600; text-decoration: none; color: #1F1E1C; display: flex; align-items: center; gap: 10px; }
-        .logo-mark { width: 32px; height: 32px; border-radius: 8px; overflow: hidden; display: flex; align-items: center; justify-content: center; }
-        .logo-mark svg { width: 100%; height: 100%; display: block; }
+        body {
+            background-color: #F8FAF9;
+            color: #18181B;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            padding: 24px 40px;
+        }
 
-        .container { flex: 1; display: flex; align-items: center; justify-content: center; padding: 20px; gap: 60px; max-width: 1200px; margin: 0 auto; width: 100%; }
+        /* Top Header Branding (Same as Main Chat Page) */
+        .header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 40px;
+        }
+        .brand {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 20px;
+            font-weight: 800;
+            color: #18181B;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            letter-spacing: -0.3px;
+        }
 
-        .auth-card { background: transparent; width: 100%; max-width: 420px; }
-        .title { font-family: 'Instrument Serif', serif; font-size: 48px; font-weight: 400; line-height: 1.1; margin-bottom: 12px; }
-        .subtitle { font-size: 16px; color: #6B6966; margin-bottom: 32px; }
+        /* Main Grid Layout */
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+            width: 100%;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 60px;
+            align-items: center;
+            flex: 1;
+        }
 
-        .form-box { background: #FFFFFF; border: 1px solid #E6E4E0; border-radius: 20px; padding: 28px; box-shadow: 0 4px 20px rgba(0,0,0,0.02); }
+        /* Left Content Area */
+        .title-text {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 42px;
+            font-weight: 800;
+            letter-spacing: -1.5px;
+            color: #18181B;
+            line-height: 1.15;
+            margin-bottom: 8px;
+        }
+        .subtitle-text {
+            font-size: 16px;
+            color: #71717A;
+            font-weight: 500;
+            margin-bottom: 32px;
+        }
 
-        .btn-google { width: 100%; padding: 14px; background: #FFFFFF; border: 1px solid #E6E4E0; border-radius: 12px; font-size: 15px; font-weight: 500; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px; transition: 0.2s; color: #1F1E1C; text-decoration: none; }
-        .btn-google:hover { background: #F5F3EF; }
+        /* Form Card */
+        .auth-card {
+            background: #FFFFFF;
+            border: 1px solid #E4E4E7;
+            border-radius: 20px;
+            padding: 28px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.03);
+            max-width: 440px;
+        }
 
-        .divider { display: flex; align-items: center; margin: 20px 0; color: #A3A199; font-size: 12px; font-weight: 500; }
-        .divider::before, .divider::after { content: ""; flex: 1; border-bottom: 1px solid #E6E4E0; }
-        .divider span { padding: 0 12px; }
+        .btn-google {
+            width: 100%;
+            padding: 12px;
+            background: #FFFFFF;
+            border: 1px solid #E4E4E7;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            color: #18181B;
+            transition: background 0.2s;
+        }
+        .btn-google:hover { background: #F4F4F5; }
 
-        .form-group { margin-bottom: 16px; }
-        .form-control { width: 100%; padding: 14px 16px; border: 1px solid #E6E4E0; border-radius: 12px; font-size: 15px; outline: none; background: #FAF8F5; transition: 0.2s; color: #1F1E1C; }
-        .form-control:focus { border-color: #1F1E1C; background: #FFFFFF; }
+        .divider {
+            display: flex;
+            align-items: center;
+            text-align: center;
+            margin: 20px 0;
+            color: #A1A1AA;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        .divider::before, .divider::after {
+            content: '';
+            flex: 1;
+            border-bottom: 1px solid #E4E4E7;
+        }
+        .divider::before { margin-right: 12px; }
+        .divider::after { margin-left: 12px; }
 
-        .btn-primary { width: 100%; padding: 14px; background: #1F1E1C; color: #FFFFFF; border: none; border-radius: 12px; font-size: 15px; font-weight: 500; cursor: pointer; transition: 0.2s; margin-top: 8px; }
-        .btn-primary:hover { background: #383734; }
+        .input-field {
+            width: 100%;
+            padding: 14px 16px;
+            background: #F4F4F5;
+            border: 1px solid transparent;
+            border-radius: 12px;
+            font-size: 14px;
+            outline: none;
+            margin-bottom: 12px;
+            transition: all 0.2s;
+        }
+        .input-field:focus {
+            background: #FFFFFF;
+            border-color: #6366F1;
+        }
 
-        .side-image { flex: 1; max-width: 520px; border-radius: 24px; overflow: hidden; display: none; }
-        .side-image img { width: 100%; height: 100%; object-fit: cover; display: block; border-radius: 24px; }
+        .btn-submit {
+            width: 100%;
+            padding: 14px;
+            background: #18181B;
+            color: #FFFFFF;
+            border: none;
+            border-radius: 12px;
+            font-size: 14px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: background 0.2s;
+            margin-top: 4px;
+        }
+        .btn-submit:hover { background: #27272A; }
 
-        .error-msg { background: #FDF2F2; border: 1px solid #F8B4B4; color: #9B1C1C; padding: 12px; border-radius: 10px; font-size: 14px; margin-bottom: 16px; }
+        /* Interactive Image Hover Effect */
+        .image-container {
+            width: 100%;
+            border-radius: 28px;
+            overflow: hidden;
+            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.08);
+            transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.4s ease;
+            cursor: pointer;
+        }
+        .image-container:hover {
+            transform: scale(1.03) rotate(0.8deg) translateY(-6px);
+            box-shadow: 0 22px 45px rgba(0, 0, 0, 0.15);
+        }
+        .side-image {
+            width: 100%;
+            height: 100%;
+            max-height: 520px;
+            object-fit: cover;
+            display: block;
+            transition: transform 0.6s ease;
+        }
+        .image-container:hover .side-image {
+            transform: scale(1.05);
+        }
 
-        @media (min-width: 900px) {
-            .side-image { display: block; height: 560px; }
+        @media (max-width: 900px) {
+            .container { grid-template-columns: 1fr; gap: 30px; }
+            .image-container { display: none; }
         }
     </style>
 </head>
 <body>
 
-<header class="header">
-    <a href="{% url 'chat-page' %}" class="logo">
-        <div class="logo-mark">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" rx="24" fill="#101118"/><path d="M44 32C34 32 29 36 29 42C29 47 35 49 39 50C44 51 50 52 50 58C50 64 44 68 33 68" fill="none" stroke="#9BA1FF" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/><path d="M47 31L47 69M47 31C64 31 73 40 73 50C73 60 64 69 47 69" fill="none" stroke="#7C83FD" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    <header class="header">
+        <a href="/" class="brand">
+            <img src="{% static 'images/logo_draft3.png' %}" alt="SD AGENT" style="width: 36px; height: 36px; border-radius: 10px; object-fit: contain;">
+            <span>SD AGENT</span>
+        </a>
+    </header>
+
+    <div class="container">
+        <!-- Left Side Form Area -->
+        <div>
+            <h1 class="title-text">Question what's next</h1>
+            <p class="subtitle-text">Your thinking partner for big ambitions</p>
+
+            <div class="auth-card">
+                <button class="btn-google">
+                    <svg width="18" height="18" viewBox="0 0 24 24"><path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.665-5.17 3.665-9.17z"/><path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.93H1.29v3.15C3.26 21.3 7.35 24 12 24z"/><path fill="#FBBC05" d="M5.28 14.27c-.25-.72-.38-1.49-.38-2.27s.13-1.55.38-2.27V6.58H1.29C.47 8.21 0 10.05 0 12s.47 3.79 1.29 5.42l3.99-3.15z"/><path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.35 0 3.26 2.7 1.29 6.58l3.99 3.15c.95-2.83 3.6-4.98 6.72-4.98z"/></svg>
+                    Continue with Google
+                </button>
+
+                <div class="divider">OR</div>
+
+                <form method="post" action="{% url 'signup' %}">
+                    {% csrf_token %}
+                    <input type="email" name="email" class="input-field" placeholder="Enter your email" required>
+                    <input type="password" name="password" class="input-field" placeholder="Enter password" required>
+                    <button type="submit" class="btn-submit">Continue with email</button>
+                </form>
+            </div>
         </div>
-        SD AGENT
-    </a>
-</header>
 
-<main class="container">
-    <div class="auth-card">
-        <h1 class="title">Question what's next</h1>
-        <p class="subtitle">Your thinking partner for big ambitions</p>
-
-        <div class="form-box">
-            {% if error %}
-                <div class="error-msg">{{ error }}</div>
-            {% endif %}
-
-            <button type="button" class="btn-google" onclick="redirectToGoogleOAuth()">
-                <svg width="18" height="18" viewBox="0 0 24 24"><path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.66-5.17 3.66-9.17z"/><path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.11-6.72-4.96H1.29v3.15C3.26 21.3 7.31 24 12 24z"/><path fill="#FBBC05" d="M5.28 14.24c-.25-.72-.38-1.49-.38-2.24s.13-1.52.38-2.24V6.61H1.29C.47 8.24 0 10.06 0 12s.47 3.76 1.29 5.39l3.99-3.15z"/><path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.31 0 3.26 2.7 1.29 6.61l3.99 3.15c.95-2.85 3.6-4.96 6.72-4.96z"/></svg>
-                Continue with Google
-            </button>
-
-            <div class="divider"><span>OR</span></div>
-
-            <form method="post" action="{% url 'signup' %}">
-                {% csrf_token %}
-                <div class="form-group">
-                    <input type="email" name="email" class="form-control" placeholder="Enter your email" required>
-                </div>
-                <div class="form-group">
-                    <input type="password" name="password" class="form-control" placeholder="Enter password" required>
-                </div>
-                <button type="submit" class="btn-primary">Continue with email</button>
-            </form>
+        <!-- Right Side Interactive Image -->
+        <div class="image-container">
+            <img src="https://images.unsplash.com/photo-1522071820081-009f0129c71c?auto=format&fit=crop&w=800&q=80" alt="SD AGENT Workspace" class="side-image">
         </div>
     </div>
-
-    <div class="side-image">
-        <img src="https://images.unsplash.com/photo-1522071820081-009f0129c71c?auto=format&fit=crop&w=1000&q=80" alt="Workspace">
-    </div>
-</main>
-
-<script>
-    function redirectToGoogleOAuth() {
-        const clientId = '863111260550-sk4hboauil823bt33uk7pinp2ouqtue4.apps.googleusercontent.com';
-        const redirectUri = encodeURIComponent('https://sd-agent.up.railway.app/signup/');
-        const scope = encodeURIComponent('email profile');
-
-        // Token Implicit Flow
-        const googleAuthUrl = `https://accounts.google.com/o/oauth2/v2/auth?response_type=token&client_id=${clientId}&redirect_uri=${redirectUri}&scope=${scope}&prompt=select_account`;
-
-        window.location.href = googleAuthUrl;
-    }
-
-    // Auto-catch Google Redirect Token from URL hash
-    window.addEventListener('DOMContentLoaded', () => {
-        if (window.location.hash && window.location.hash.includes('access_token=')) {
-            const params = new URLSearchParams(window.location.hash.substring(1));
-            const accessToken = params.get('access_token');
-            if (accessToken) {
-                // Instantly authenticate via backend
-                fetch('/api/google-auth/?access_token=' + encodeURIComponent(accessToken), {
-                    method: 'GET',
-                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
-                })
-                .then(res => res.json())
-                .then(data => {
-                    if (data.status === 'ok') {
-                        window.location.href = '/';
-                    } else {
-                        alert('Authentication failed. Please try again.');
-                    }
-                })
-                .catch(err => alert('Network error during authentication: ' + err));
-            }
-        }
-    });
-</script>
 
 </body>
 </html>
