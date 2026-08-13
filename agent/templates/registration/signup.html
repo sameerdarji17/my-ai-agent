@@ -7,172 +7,79 @@
     <title>Sign Up — SD AGENT</title>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@600;700;800&display=swap" rel="stylesheet">
     <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Plus Jakarta Sans', sans-serif; }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Plus Jakarta Sans', sans-serif; transition: background-color 0.25s, color 0.25s; }
+
+        :root {
+            --bg-color: #F8FAF9;
+            --card-bg: #FFFFFF;
+            --text-main: #18181B;
+            --text-muted: #71717A;
+            --border-color: #E4E4E7;
+            --input-bg: #F4F4F5;
+        }
+
+        body.theme-black {
+            --bg-color: #09090B;
+            --card-bg: #18181B;
+            --text-main: #FAFAFA;
+            --text-muted: #A1A1AA;
+            --border-color: #27272A;
+            --input-bg: #27272A;
+        }
+
+        body.theme-darkblue {
+            --bg-color: #0F172A;
+            --card-bg: #1E293B;
+            --text-main: #F8FAFC;
+            --text-muted: #94A3B8;
+            --border-color: #334155;
+            --input-bg: #334155;
+        }
 
         body {
-            background-color: #F8FAF9;
-            color: #18181B;
+            background-color: var(--bg-color);
+            color: var(--text-main);
             min-height: 100vh;
             display: flex;
             flex-direction: column;
             padding: 24px 40px;
         }
 
-        .header {
-            display: flex;
-            align-items: center;
-            margin-bottom: 40px;
-        }
-        .brand {
-            font-family: 'Space Grotesk', sans-serif;
-            font-size: 20px;
-            font-weight: 800;
-            color: #18181B;
-            text-decoration: none;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            letter-spacing: -0.3px;
-        }
+        .header { display: flex; align-items: center; margin-bottom: 40px; }
+        .brand { font-family: 'Space Grotesk', sans-serif; font-size: 20px; font-weight: 800; color: var(--text-main); text-decoration: none; display: flex; align-items: center; gap: 12px; }
+        .logo-box { width: 38px; height: 38px; background: #0E0F12; border-radius: 10px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
 
-        .container {
-            max-width: 1100px;
-            margin: 0 auto;
-            width: 100%;
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 60px;
-            align-items: center;
-            flex: 1;
-        }
+        .container { max-width: 1100px; margin: 0 auto; width: 100%; display: grid; grid-template-columns: 1fr 1fr; gap: 60px; align-items: center; flex: 1; }
+        .title-text { font-family: 'Space Grotesk', sans-serif; font-size: 42px; font-weight: 800; color: var(--text-main); margin-bottom: 8px; }
+        .subtitle-text { font-size: 16px; color: var(--text-muted); margin-bottom: 32px; }
 
-        .title-text {
-            font-family: 'Space Grotesk', sans-serif;
-            font-size: 42px;
-            font-weight: 800;
-            letter-spacing: -1.5px;
-            color: #18181B;
-            line-height: 1.15;
-            margin-bottom: 8px;
-        }
-        .subtitle-text {
-            font-size: 16px;
-            color: #71717A;
-            font-weight: 500;
-            margin-bottom: 32px;
-        }
+        .auth-card { background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 20px; padding: 28px; max-width: 440px; }
+        .btn-google { width: 100%; padding: 12px; background: var(--card-bg); border: 1px solid var(--border-color); color: var(--text-main); border-radius: 12px; display: flex; align-items: center; justify-content: center; gap: 10px; font-weight: 600; cursor: pointer; }
 
-        .auth-card {
-            background: #FFFFFF;
-            border: 1px solid #E4E4E7;
-            border-radius: 20px;
-            padding: 28px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.03);
-            max-width: 440px;
-        }
-
-        .btn-google {
-            width: 100%;
-            padding: 12px;
-            background: #FFFFFF;
-            border: 1px solid #E4E4E7;
-            border-radius: 12px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
-            font-size: 14px;
-            font-weight: 600;
-            cursor: pointer;
-            color: #18181B;
-            transition: background 0.2s;
-        }
-        .btn-google:hover { background: #F4F4F5; }
-
-        .divider {
-            display: flex;
-            align-items: center;
-            text-align: center;
-            margin: 20px 0;
-            color: #A1A1AA;
-            font-size: 12px;
-            font-weight: 600;
-        }
-        .divider::before, .divider::after {
-            content: '';
-            flex: 1;
-            border-bottom: 1px solid #E4E4E7;
-        }
+        .divider { display: flex; align-items: center; text-align: center; margin: 20px 0; color: var(--text-muted); font-size: 12px; font-weight: 600; }
+        .divider::before, .divider::after { content: ''; flex: 1; border-bottom: 1px solid var(--border-color); }
         .divider::before { margin-right: 12px; }
         .divider::after { margin-left: 12px; }
 
-        .input-field {
-            width: 100%;
-            padding: 14px 16px;
-            background: #F4F4F5;
-            border: 1px solid transparent;
-            border-radius: 12px;
-            font-size: 14px;
-            outline: none;
-            margin-bottom: 12px;
-            transition: all 0.2s;
-        }
-        .input-field:focus {
-            background: #FFFFFF;
-            border-color: #6366F1;
-        }
+        .input-field { width: 100%; padding: 14px; background: var(--input-bg); border: 1px solid transparent; color: var(--text-main); border-radius: 12px; font-size: 14px; outline: none; margin-bottom: 12px; }
+        .btn-submit { width: 100%; padding: 14px; background: #6366F1; color: #FFF; border: none; border-radius: 12px; font-weight: 700; cursor: pointer; }
 
-        .btn-submit {
-            width: 100%;
-            padding: 14px;
-            background: #18181B;
-            color: #FFFFFF;
-            border: none;
-            border-radius: 12px;
-            font-size: 14px;
-            font-weight: 700;
-            cursor: pointer;
-            transition: background 0.2s;
-            margin-top: 4px;
-        }
-        .btn-submit:hover { background: #27272A; }
+        .image-container { width: 100%; border-radius: 28px; overflow: hidden; box-shadow: 0 12px 30px rgba(0,0,0,0.08); }
+        .side-image { width: 100%; max-height: 520px; object-fit: cover; display: block; }
 
-        .image-container {
-            width: 100%;
-            border-radius: 28px;
-            overflow: hidden;
-            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.08);
-            transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.4s ease;
-            cursor: pointer;
-        }
-        .image-container:hover {
-            transform: scale(1.03) rotate(0.8deg) translateY(-6px);
-            box-shadow: 0 22px 45px rgba(0, 0, 0, 0.15);
-        }
-        .side-image {
-            width: 100%;
-            height: 100%;
-            max-height: 520px;
-            object-fit: cover;
-            display: block;
-            transition: transform 0.6s ease;
-        }
-        .image-container:hover .side-image {
-            transform: scale(1.05);
-        }
-
-        @media (max-width: 900px) {
-            .container { grid-template-columns: 1fr; gap: 30px; }
-            .image-container { display: none; }
-        }
+        @media (max-width: 900px) { .container { grid-template-columns: 1fr; gap: 30px; } .image-container { display: none; } }
     </style>
 </head>
 <body>
 
     <header class="header">
         <a href="/" class="brand">
-            <!-- Custom Image Logo from Static Folder -->
-            <img src="{% static 'images/logo_draft3.png' %}" alt="SD AGENT" style="width: 36px; height: 36px; border-radius: 10px; object-fit: contain;">
+            <div class="logo-box">
+                <svg width="22" height="22" viewBox="0 0 100 100" fill="none">
+                    <path d="M 38 28 C 24 28 22 42 36 48 C 50 54 48 72 32 72 C 24 72 20 66 18 60" stroke="#8B8EFF" stroke-width="11" stroke-linecap="round"/>
+                    <path d="M 48 25 L 48 75 C 78 75 78 25 48 25 Z" stroke="#8B8EFF" stroke-width="11" stroke-linejoin="round"/>
+                </svg>
+            </div>
             <span>SD AGENT</span>
         </a>
     </header>
@@ -200,9 +107,16 @@
         </div>
 
         <div class="image-container">
-            <img src="https://images.unsplash.com/photo-1522071820081-009f0129c71c?auto=format&fit=crop&w=800&q=80" alt="SD AGENT Workspace" class="side-image">
+            <img src="https://images.unsplash.com/photo-1522071820081-009f0129c71c?auto=format&fit=crop&w=800&q=80" class="side-image">
         </div>
     </div>
 
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            const savedTheme = localStorage.getItem('selected_theme') || 'white';
+            if (savedTheme === 'black') document.body.classList.add('theme-black');
+            else if (savedTheme === 'darkblue') document.body.classList.add('theme-darkblue');
+        });
+    </script>
 </body>
 </html>
