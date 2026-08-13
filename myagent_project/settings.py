@@ -62,9 +62,12 @@ MIDDLEWARE = [
 
 ROOT_URLCONF = "myagent_project.urls"
 
+# ---------------------------------------------------------------------------
+# TEMPLATES (FIXED BACKEND PATH)
+# ---------------------------------------------------------------------------
 TEMPLATES = [
     {
-        "BACKEND": "django.template.backends.DjangoTemplates",
+        "BACKEND": "django.template.backends.django.DjangoTemplates",
         "DIRS": [],
         "APP_DIRS": True,
         "OPTIONS": {
@@ -105,7 +108,7 @@ USE_I18N = True
 USE_TZ = True
 
 # ---------------------------------------------------------------------------
-# STATIC FILES CONFIGURATION (FIXED)
+# STATIC FILES CONFIGURATION
 # ---------------------------------------------------------------------------
 STATIC_URL = "/static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
