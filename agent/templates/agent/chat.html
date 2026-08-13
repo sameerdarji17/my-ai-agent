@@ -74,10 +74,27 @@
         .footer-action-item:hover { background: rgba(255,255,255,0.08); }
 
         .main-content { flex: 1; display: flex; flex-direction: column; height: 100vh; height: 100dvh; width: 100%; background: var(--bg-color); }
-        .top-bar { height: 60px; padding: 0 20px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border-color); }
+
+        /* Top Bar Layout (Centered Free Plan Badge) */
+        .top-bar {
+            height: 60px;
+            padding: 0 20px;
+            display: grid;
+            grid-template-columns: 40px 1fr 40px;
+            align-items: center;
+            border-bottom: 1px solid var(--border-color);
+        }
         .toggle-btn { background: none; border: none; cursor: pointer; padding: 8px; color: var(--text-main); border-radius: 8px; }
 
-        .top-center-plan { font-size: 13px; color: var(--text-muted); font-weight: 500; display: flex; align-items: center; gap: 8px; }
+        .top-center-plan {
+            font-size: 13px;
+            color: var(--text-muted);
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
         .upgrade-link { color: #6366F1; text-decoration: none; font-weight: 700; cursor: pointer; padding: 5px 12px; background: rgba(99,102,241,0.1); border-radius: 8px; }
 
         .chat-container { flex: 1; overflow-y: auto; padding: 24px 20px; display: flex; flex-direction: column; align-items: center; }
@@ -94,10 +111,35 @@
         .msg-wrapper.user .msg { background: var(--msg-user-bg); color: var(--msg-user-text); border-bottom-right-radius: 4px; }
         .msg-wrapper.assistant .msg { background: var(--card-bg); border: 1px solid var(--border-color); color: var(--text-main); border-bottom-left-radius: 4px; }
 
+        /* Modern AI Typing Dots Animation Indicator */
+        .typing-indicator {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 14px 18px;
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            border-bottom-left-radius: 4px;
+            width: fit-content;
+        }
+        .dot {
+            width: 8px;
+            height: 8px;
+            background: #6366F1;
+            border-radius: 50%;
+            animation: dotBounce 1.4s infinite ease-in-out both;
+        }
+        .dot:nth-child(1) { animation-delay: -0.32s; }
+        .dot:nth-child(2) { animation-delay: -0.16s; }
+        @keyframes dotBounce {
+            0%, 80%, 100% { transform: scale(0); opacity: 0.3; }
+            40% { transform: scale(1); opacity: 1; }
+        }
+
         .input-wrapper { padding: 16px 20px; width: 100%; max-width: 780px; margin: 0 auto; }
         .input-box { background: var(--input-bg); border: 1px solid var(--border-color); border-radius: 22px; padding: 14px 18px; box-shadow: 0 4px 20px rgba(0,0,0,0.04); display: flex; flex-direction: column; gap: 10px; }
 
-        /* Attachment Preview Chips */
         .attachment-preview-bar { display: none; gap: 8px; align-items: center; flex-wrap: wrap; padding-bottom: 4px; }
         .attachment-chip { display: flex; align-items: center; gap: 6px; background: rgba(99,102,241,0.1); border: 1px solid #6366F1; color: var(--text-main); padding: 4px 10px; border-radius: 8px; font-size: 12px; font-weight: 600; }
         .attachment-chip img { width: 20px; height: 20px; border-radius: 4px; object-fit: cover; }
@@ -109,7 +151,6 @@
         .icon-btn { background: rgba(255,255,255,0.06); border: 1px solid var(--border-color); padding: 8px 10px; border-radius: 10px; cursor: pointer; color: var(--text-muted); transition: all 0.2s; }
         .icon-btn:hover { color: var(--text-main); border-color: #6366F1; }
 
-        /* Mic Recording Pulse Animation */
         .icon-btn.recording { background: #FEE2E2; border-color: #EF4444; color: #DC2626; animation: micPulse 1.2s infinite; }
         @keyframes micPulse { 0% { transform: scale(1); } 50% { transform: scale(1.08); } 100% { transform: scale(1); } }
 
@@ -177,13 +218,18 @@
 
 <main class="main-content">
     <header class="top-bar">
-        <button class="toggle-btn toggle-btn-top" onclick="toggleSidebar()">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12h18M3 6h18M3 18h18"/></svg>
-        </button>
+        <div>
+            <button class="toggle-btn toggle-btn-top" onclick="toggleSidebar()">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12h18M3 6h18M3 18h18"/></svg>
+            </button>
+        </div>
+
+        <!-- Perfectly Centered Plan Bar -->
         <div class="top-center-plan">
             <span>Free plan</span> • <span class="upgrade-link" onclick="openUpgradeModal()">Upgrade</span>
         </div>
-        <div style="width: 32px;"></div>
+
+        <div></div>
     </header>
 
     <div class="chat-container" id="chatContainer">
@@ -202,26 +248,22 @@
 
     <div class="input-wrapper">
         <div class="input-box">
-            <!-- Selected Attachments Preview Bar -->
             <div class="attachment-preview-bar" id="attachmentPreviewBar"></div>
 
             <textarea class="chat-input" id="userInput" placeholder="Ask SD AGENT anything..." rows="1" onkeydown="handleKeyDown(event)"></textarea>
 
             <div class="input-bottom-row">
                 <div class="left-actions">
-                    <!-- Hidden File Input -->
                     <input type="file" id="fileUploadInput" style="display:none;" onchange="handleFileSelect(event)">
                     <button class="icon-btn" title="Add File / Document" onclick="document.getElementById('fileUploadInput').click()">
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
                     </button>
 
-                    <!-- Hidden Image Input -->
                     <input type="file" id="imageUploadInput" accept="image/*" style="display:none;" onchange="handleImageSelect(event)">
                     <button class="icon-btn" title="Upload Image" onclick="document.getElementById('imageUploadInput').click()">
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
                     </button>
 
-                    <!-- Voice Mic Button -->
                     <button class="icon-btn" id="micBtn" title="Voice Input" onclick="toggleVoiceRecognition()">
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
                     </button>
@@ -291,7 +333,7 @@
         localStorage.setItem('selected_theme', theme);
     }
 
-    /* Working Speech-to-Text Voice Mic */
+    /* Working Voice Speech Recognition */
     let recognition = null;
     let isRecording = false;
 
@@ -324,7 +366,6 @@
         recognition.start();
     }
 
-    /* Active File & Image Attachment Handlers */
     let attachedFile = null;
 
     function handleFileSelect(e) {
@@ -366,7 +407,6 @@
         previewBar.style.display = 'none';
     }
 
-    /* Automatic Typing Text Animation */
     const phrases = [
         "How can I help you today?",
         "Let's build something extraordinary.",
@@ -407,6 +447,7 @@
             displayContent = `[Attached: ${attachedFile.name}]\n` + text;
         }
 
+        // Render User Message
         const userDiv = document.createElement('div');
         userDiv.className = 'msg-wrapper user';
         userDiv.innerHTML = `<div class="msg">${displayContent}</div>`;
@@ -415,6 +456,23 @@
         input.value = '';
         removeAttachment();
 
+        // Render AI Typing/Thinking Dots Indicator
+        const typingDiv = document.createElement('div');
+        typingDiv.className = 'msg-wrapper assistant';
+        typingDiv.id = 'aiTypingIndicator';
+        typingDiv.innerHTML = `
+            <div class="typing-indicator">
+                <div class="dot"></div>
+                <div class="dot"></div>
+                <div class="dot"></div>
+            </div>
+        `;
+        list.appendChild(typingDiv);
+
+        const chatContainer = document.getElementById('chatContainer');
+        chatContainer.scrollTop = chatContainer.scrollHeight;
+
+        // Fetch AI Response
         fetch('/api/agent/chat/', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token }}' },
@@ -422,11 +480,25 @@
         })
         .then(res => res.json())
         .then(data => {
+            // Remove Typing Indicator
+            const indicator = document.getElementById('aiTypingIndicator');
+            if (indicator) indicator.remove();
+
+            // Render Assistant Reply
             const aiDiv = document.createElement('div');
             aiDiv.className = 'msg-wrapper assistant';
             aiDiv.innerHTML = `<div class="msg">${data.reply || 'Responded successfully.'}</div>`;
             list.appendChild(aiDiv);
-            document.getElementById('chatContainer').scrollTop = document.getElementById('chatContainer').scrollHeight;
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+        })
+        .catch(err => {
+            const indicator = document.getElementById('aiTypingIndicator');
+            if (indicator) indicator.remove();
+
+            const errDiv = document.createElement('div');
+            errDiv.className = 'msg-wrapper assistant';
+            errDiv.innerHTML = `<div class="msg">Something went wrong, please try again.</div>`;
+            list.appendChild(errDiv);
         });
     }
 
