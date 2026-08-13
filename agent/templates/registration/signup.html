@@ -64,8 +64,29 @@
         .input-field { width: 100%; padding: 14px; background: var(--input-bg); border: 1px solid transparent; color: var(--text-main); border-radius: 12px; font-size: 14px; outline: none; margin-bottom: 12px; }
         .btn-submit { width: 100%; padding: 14px; background: #6366F1; color: #FFF; border: none; border-radius: 12px; font-weight: 700; cursor: pointer; }
 
-        .image-container { width: 100%; border-radius: 28px; overflow: hidden; box-shadow: 0 12px 30px rgba(0,0,0,0.08); }
-        .side-image { width: 100%; max-height: 520px; object-fit: cover; display: block; }
+        /* Interactive Photo Hover & Tilt Motion Effect */
+        .image-container {
+            width: 100%;
+            border-radius: 28px;
+            overflow: hidden;
+            box-shadow: 0 12px 30px rgba(0,0,0,0.08);
+            transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.4s ease;
+            cursor: pointer;
+        }
+        .image-container:hover {
+            transform: scale(1.03) rotate(1.2deg) translateY(-8px);
+            box-shadow: 0 22px 45px rgba(0, 0, 0, 0.18);
+        }
+        .side-image {
+            width: 100%;
+            max-height: 520px;
+            object-fit: cover;
+            display: block;
+            transition: transform 0.5s ease;
+        }
+        .image-container:hover .side-image {
+            transform: scale(1.06);
+        }
 
         @media (max-width: 900px) { .container { grid-template-columns: 1fr; gap: 30px; } .image-container { display: none; } }
     </style>
@@ -107,7 +128,7 @@
         </div>
 
         <div class="image-container">
-            <img src="https://images.unsplash.com/photo-1522071820081-009f0129c71c?auto=format&fit=crop&w=800&q=80" class="side-image">
+            <img src="https://images.unsplash.com/photo-1522071820081-009f0129c71c?auto=format&fit=crop&w=800&q=80" class="side-image" alt="Workspace">
         </div>
     </div>
 

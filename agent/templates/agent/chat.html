@@ -62,7 +62,6 @@
         .sidebar-header { padding: 18px 20px; display: flex; align-items: center; justify-content: space-between; }
         .brand { font-family: 'Space Grotesk', sans-serif; font-size: 19px; font-weight: 800; color: var(--text-main); text-decoration: none; display: flex; align-items: center; gap: 10px; }
 
-        /* Pure SVG Guaranteed Logo Badge */
         .logo-box { width: 36px; height: 36px; background: #0E0F12; border-radius: 10px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
 
         .btn-new-chat { margin: 0 16px 16px; padding: 12px 16px; background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 12px; display: flex; align-items: center; gap: 10px; font-size: 14px; font-weight: 600; cursor: pointer; color: var(--text-main); }
@@ -96,13 +95,26 @@
         .msg-wrapper.assistant .msg { background: var(--card-bg); border: 1px solid var(--border-color); color: var(--text-main); border-bottom-left-radius: 4px; }
 
         .input-wrapper { padding: 16px 20px; width: 100%; max-width: 780px; margin: 0 auto; }
-        .input-box { background: var(--input-bg); border: 1px solid var(--border-color); border-radius: 22px; padding: 14px 18px; box-shadow: 0 4px 20px rgba(0,0,0,0.04); display: flex; flex-direction: column; gap: 12px; }
+        .input-box { background: var(--input-bg); border: 1px solid var(--border-color); border-radius: 22px; padding: 14px 18px; box-shadow: 0 4px 20px rgba(0,0,0,0.04); display: flex; flex-direction: column; gap: 10px; }
+
+        /* Attachment Preview Chips */
+        .attachment-preview-bar { display: none; gap: 8px; align-items: center; flex-wrap: wrap; padding-bottom: 4px; }
+        .attachment-chip { display: flex; align-items: center; gap: 6px; background: rgba(99,102,241,0.1); border: 1px solid #6366F1; color: var(--text-main); padding: 4px 10px; border-radius: 8px; font-size: 12px; font-weight: 600; }
+        .attachment-chip img { width: 20px; height: 20px; border-radius: 4px; object-fit: cover; }
+        .btn-remove-attachment { background: none; border: none; cursor: pointer; color: #EF4444; font-size: 14px; line-height: 1; }
+
         .chat-input { width: 100%; border: none; outline: none; font-size: 15px; background: transparent; resize: none; min-height: 44px; max-height: 140px; color: var(--text-main); }
         .input-bottom-row { display: flex; align-items: center; justify-content: space-between; }
         .left-actions { display: flex; align-items: center; gap: 6px; }
-        .icon-btn { background: rgba(255,255,255,0.06); border: none; padding: 8px 10px; border-radius: 10px; cursor: pointer; color: var(--text-muted); }
+        .icon-btn { background: rgba(255,255,255,0.06); border: 1px solid var(--border-color); padding: 8px 10px; border-radius: 10px; cursor: pointer; color: var(--text-muted); transition: all 0.2s; }
+        .icon-btn:hover { color: var(--text-main); border-color: #6366F1; }
 
-        .btn-send-icon { background: #6366F1; color: #FFFFFF; border: none; width: 38px; height: 38px; border-radius: 12px; display: flex; align-items: center; justify-content: center; cursor: pointer; }
+        /* Mic Recording Pulse Animation */
+        .icon-btn.recording { background: #FEE2E2; border-color: #EF4444; color: #DC2626; animation: micPulse 1.2s infinite; }
+        @keyframes micPulse { 0% { transform: scale(1); } 50% { transform: scale(1.08); } 100% { transform: scale(1); } }
+
+        .btn-send-icon { background: #6366F1; color: #FFFFFF; border: none; width: 38px; height: 38px; border-radius: 12px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: transform 0.2s; }
+        .btn-send-icon:hover { transform: scale(1.05); }
 
         .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); backdrop-filter: blur(4px); display: none; align-items: center; justify-content: center; z-index: 1000; padding: 20px; }
         .modal-card { background: var(--card-bg); color: var(--text-main); padding: 24px; border-radius: 24px; max-width: 600px; width: 100%; border: 1px solid var(--border-color); }
@@ -183,18 +195,36 @@
                 </svg>
             </div>
             <h1 class="welcome-title">Hey there, {{ username|default:"Explorer" }}</h1>
-            <p class="welcome-subtitle">How can SD AGENT help you today?</p>
+            <p class="welcome-subtitle" id="dynamicSubtitle"></p>
         </div>
         <div class="messages-list" id="messagesList"></div>
     </div>
 
     <div class="input-wrapper">
         <div class="input-box">
+            <!-- Selected Attachments Preview Bar -->
+            <div class="attachment-preview-bar" id="attachmentPreviewBar"></div>
+
             <textarea class="chat-input" id="userInput" placeholder="Ask SD AGENT anything..." rows="1" onkeydown="handleKeyDown(event)"></textarea>
+
             <div class="input-bottom-row">
                 <div class="left-actions">
-                    <button class="icon-btn" onclick="alert('File attachment active!')"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg></button>
-                    <button class="icon-btn" onclick="alert('Image upload active!')"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg></button>
+                    <!-- Hidden File Input -->
+                    <input type="file" id="fileUploadInput" style="display:none;" onchange="handleFileSelect(event)">
+                    <button class="icon-btn" title="Add File / Document" onclick="document.getElementById('fileUploadInput').click()">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+                    </button>
+
+                    <!-- Hidden Image Input -->
+                    <input type="file" id="imageUploadInput" accept="image/*" style="display:none;" onchange="handleImageSelect(event)">
+                    <button class="icon-btn" title="Upload Image" onclick="document.getElementById('imageUploadInput').click()">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+                    </button>
+
+                    <!-- Voice Mic Button -->
+                    <button class="icon-btn" id="micBtn" title="Voice Input" onclick="toggleVoiceRecognition()">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
+                    </button>
                 </div>
                 <button class="btn-send-icon" onclick="sendMessage()"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg></button>
             </div>
@@ -261,9 +291,105 @@
         localStorage.setItem('selected_theme', theme);
     }
 
+    /* Working Speech-to-Text Voice Mic */
+    let recognition = null;
+    let isRecording = false;
+
+    function toggleVoiceRecognition() {
+        const micBtn = document.getElementById('micBtn');
+        const userInput = document.getElementById('userInput');
+
+        if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+            alert('Voice input is not supported in this browser. Please use Google Chrome.');
+            return;
+        }
+
+        if (isRecording) {
+            recognition.stop();
+            return;
+        }
+
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        recognition = new SpeechRecognition();
+        recognition.continuous = false;
+        recognition.lang = 'en-US';
+
+        recognition.onstart = () => { isRecording = true; micBtn.classList.add('recording'); };
+        recognition.onresult = (e) => {
+            const transcript = e.results[0][0].transcript;
+            userInput.value += (userInput.value ? ' ' : '') + transcript;
+        };
+        recognition.onerror = () => { isRecording = false; micBtn.classList.remove('recording'); };
+        recognition.onend = () => { isRecording = false; micBtn.classList.remove('recording'); };
+        recognition.start();
+    }
+
+    /* Active File & Image Attachment Handlers */
+    let attachedFile = null;
+
+    function handleFileSelect(e) {
+        if (e.target.files && e.target.files[0]) {
+            attachedFile = e.target.files[0];
+            showAttachmentBadge(attachedFile.name, '📄 File Attached');
+        }
+    }
+
+    function handleImageSelect(e) {
+        if (e.target.files && e.target.files[0]) {
+            attachedFile = e.target.files[0];
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                showAttachmentBadge(attachedFile.name, '🖼️ Image Attached', event.target.result);
+            };
+            reader.readAsDataURL(attachedFile);
+        }
+    }
+
+    function showAttachmentBadge(filename, typeLabel, imgDataUrl = null) {
+        const previewBar = document.getElementById('attachmentPreviewBar');
+        previewBar.style.display = 'flex';
+        previewBar.innerHTML = `
+            <div class="attachment-chip">
+                ${imgDataUrl ? `<img src="${imgDataUrl}">` : ''}
+                <span>${typeLabel}: ${filename.length > 20 ? filename.substring(0, 18) + '...' : filename}</span>
+                <button class="btn-remove-attachment" onclick="removeAttachment()">✕</button>
+            </div>
+        `;
+    }
+
+    function removeAttachment() {
+        attachedFile = null;
+        document.getElementById('fileUploadInput').value = '';
+        document.getElementById('imageUploadInput').value = '';
+        const previewBar = document.getElementById('attachmentPreviewBar');
+        previewBar.innerHTML = '';
+        previewBar.style.display = 'none';
+    }
+
+    /* Automatic Typing Text Animation */
+    const phrases = [
+        "How can I help you today?",
+        "Let's build something extraordinary.",
+        "Need help with code, ideas, or analysis?",
+        "What's on your mind today?"
+    ];
+    let phraseIdx = 0, charIdx = 0, isDeleting = false;
+
+    function typeEffect() {
+        const subEl = document.getElementById('dynamicSubtitle');
+        if (!subEl) return;
+        const currentText = phrases[phraseIdx];
+        subEl.innerText = isDeleting ? currentText.substring(0, charIdx--) : currentText.substring(0, charIdx++);
+        let speed = isDeleting ? 30 : 60;
+        if (!isDeleting && charIdx === currentText.length + 1) { speed = 2000; isDeleting = true; }
+        else if (isDeleting && charIdx === 0) { isDeleting = false; phraseIdx = (phraseIdx + 1) % phrases.length; speed = 500; }
+        setTimeout(typeEffect, speed);
+    }
+
     document.addEventListener("DOMContentLoaded", () => {
         const savedTheme = localStorage.getItem('selected_theme') || 'white';
         setTheme(savedTheme);
+        typeEffect();
     });
 
     function handleKeyDown(e) { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); } }
@@ -271,20 +397,28 @@
     function sendMessage() {
         const input = document.getElementById('userInput');
         const text = input.value.trim();
-        if (!text) return;
+        if (!text && !attachedFile) return;
 
         document.getElementById('welcomeBox').style.display = 'none';
         const list = document.getElementById('messagesList');
+
+        let displayContent = text;
+        if (attachedFile) {
+            displayContent = `[Attached: ${attachedFile.name}]\n` + text;
+        }
+
         const userDiv = document.createElement('div');
         userDiv.className = 'msg-wrapper user';
-        userDiv.innerHTML = `<div class="msg">${text}</div>`;
+        userDiv.innerHTML = `<div class="msg">${displayContent}</div>`;
         list.appendChild(userDiv);
+
         input.value = '';
+        removeAttachment();
 
         fetch('/api/agent/chat/', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token }}' },
-            body: JSON.stringify({ message: text })
+            body: JSON.stringify({ message: displayContent })
         })
         .then(res => res.json())
         .then(data => {
