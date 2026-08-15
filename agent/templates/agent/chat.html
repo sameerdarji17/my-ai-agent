@@ -19,6 +19,7 @@
             --input-bg: #FFFFFF;
             --msg-user-bg: #E2E8F0;
             --msg-user-text: #0F172A;
+            --action-bg: #FFFFFF;
         }
 
         body.theme-black {
@@ -31,6 +32,7 @@
             --input-bg: #18181B;
             --msg-user-bg: #27272A;
             --msg-user-text: #FAFAFA;
+            --action-bg: #18181B;
         }
 
         body.theme-darkblue {
@@ -43,6 +45,7 @@
             --input-bg: #1E293B;
             --msg-user-bg: #334155;
             --msg-user-text: #F8FAFC;
+            --action-bg: #1E293B;
         }
 
         body { background: var(--bg-color); color: var(--text-main); height: 100vh; height: 100dvh; display: flex; overflow: hidden; }
@@ -101,12 +104,56 @@
         .welcome-title { font-family: 'Space Grotesk', sans-serif; font-size: 36px; font-weight: 700; color: var(--text-main); }
         .welcome-subtitle { font-size: 16px; color: var(--text-muted); min-height: 28px; font-weight: 500; }
 
-        .messages-list { width: 100%; max-width: 760px; display: flex; flex-direction: column; gap: 18px; }
-        .msg-wrapper { display: flex; flex-direction: column; position: relative; max-width: 85%; }
-        .msg-wrapper.user { align-self: flex-end; }
-        .msg-wrapper.assistant { align-self: flex-start; }
+        .messages-list { width: 100%; max-width: 760px; display: flex; flex-direction: column; gap: 20px; }
 
-        .msg { padding: 14px 18px; border-radius: 16px; font-size: 15px; line-height: 1.6; }
+        /* Message Floating Hover Bar & Actions */
+        .msg-wrapper { display: flex; flex-direction: column; position: relative; max-width: 85%; }
+        .msg-wrapper.user { align-self: flex-end; align-items: flex-end; }
+        .msg-wrapper.assistant { align-self: flex-start; align-items: flex-start; }
+
+        .msg-actions {
+            display: none;
+            position: absolute;
+            top: -16px;
+            background: var(--action-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 2px 6px;
+            gap: 4px;
+            align-items: center;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            z-index: 10;
+        }
+        .msg-wrapper.user .msg-actions { right: 8px; }
+        .msg-wrapper.assistant .msg-actions { left: 8px; }
+
+        .msg-wrapper:hover .msg-actions { display: inline-flex; }
+
+        .action-icon-btn {
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            padding: 3px;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+        .action-icon-btn:hover { color: var(--text-main); background: rgba(255,255,255,0.08); }
+
+        .msg-timestamp {
+            font-size: 11px;
+            color: var(--text-muted);
+            padding: 0 4px;
+            user-select: none;
+            border-right: 1px solid var(--border-color);
+            margin-right: 2px;
+            font-weight: 500;
+        }
+
+        .msg { padding: 14px 18px; border-radius: 16px; font-size: 15px; line-height: 1.6; word-break: break-word; white-space: pre-wrap; }
         .msg-wrapper.user .msg { background: var(--msg-user-bg); color: var(--msg-user-text); border-bottom-right-radius: 4px; }
         .msg-wrapper.assistant .msg { background: var(--card-bg); border: 1px solid var(--border-color); color: var(--text-main); border-bottom-left-radius: 4px; }
 
@@ -271,7 +318,7 @@
             <button onclick="closeSettingsModal()" style="background:none; border:none; cursor:pointer; font-size:20px; color:var(--text-main);">✕</button>
         </div>
         <p style="font-size:14px; color:var(--text-muted);">Choose your preferred theme appearance:</p>
-        <div class="theme-option-btn" onclick="setTheme('white')"><span>☀️ White (Light Theme)</span><span id="check-white">✓</span></div>
+        <div class="theme-option-btn" onclick="setTheme('white')"><span>☀️ White (Light Theme)</span><span id="check-white"></span></div>
         <div class="theme-option-btn" onclick="setTheme('black')"><span>🌙 Black (Dark Theme)</span><span id="check-black"></span></div>
         <div class="theme-option-btn" onclick="setTheme('darkblue')"><span>🌌 Dark Blue (Midnight Theme)</span><span id="check-darkblue"></span></div>
     </div>
@@ -323,6 +370,42 @@
             if (document.getElementById('check-white')) document.getElementById('check-white').innerText = '✓';
         }
         localStorage.setItem('selected_theme', theme);
+    }
+
+    function getCurrentTimeString() {
+        const now = new Date();
+        return now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    }
+
+    function copyMessage(btn) {
+        const wrapper = btn.closest('.msg-wrapper');
+        const msgDiv = wrapper.querySelector('.msg');
+        const text = msgDiv.innerText;
+
+        navigator.clipboard.writeText(text).then(() => {
+            const originalSvg = btn.innerHTML;
+            btn.innerHTML = `
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#22C55E" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="20 6 9 17 4 12"></polyline>
+                </svg>
+            `;
+            setTimeout(() => { btn.innerHTML = originalSvg; }, 1500);
+        });
+    }
+
+    function editMessage(btn) {
+        const wrapper = btn.closest('.msg-wrapper');
+        const msgDiv = wrapper.querySelector('.msg');
+        let text = msgDiv.innerText;
+
+        // Remove [Attached: ...] tag if present
+        text = text.replace(/^\[Attached:[^\]]+\]\n?/, '');
+
+        const input = document.getElementById('userInput');
+        input.value = text;
+        input.focus();
+        input.style.height = 'auto';
+        input.style.height = (input.scrollHeight) + 'px';
     }
 
     /* LIMIT TRACKING & LOCKING ENGINE */
@@ -465,9 +548,29 @@
             displayContent = `[Attached: ${attachedFile.name}]\n` + text;
         }
 
+        const currentTime = getCurrentTimeString();
+
+        // User message bubble with Timestamp, Edit icon, and Copy icon
         const userDiv = document.createElement('div');
         userDiv.className = 'msg-wrapper user';
-        userDiv.innerHTML = `<div class="msg">${displayContent}</div>`;
+        userDiv.innerHTML = `
+            <div class="msg-actions">
+                <span class="msg-timestamp">${currentTime}</span>
+                <button class="action-icon-btn" title="Edit message" onclick="editMessage(this)">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                    </svg>
+                </button>
+                <button class="action-icon-btn" title="Copy text" onclick="copyMessage(this)">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                        <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                    </svg>
+                </button>
+            </div>
+            <div class="msg">${displayContent}</div>
+        `;
         list.appendChild(userDiv);
 
         input.value = '';
@@ -505,9 +608,21 @@
             const indicator = document.getElementById('aiTypingIndicator');
             if (indicator) indicator.remove();
 
+            const aiTime = getCurrentTimeString();
             const aiDiv = document.createElement('div');
             aiDiv.className = 'msg-wrapper assistant';
-            aiDiv.innerHTML = `<div class="msg">${data.reply || 'Responded successfully.'}</div>`;
+            aiDiv.innerHTML = `
+                <div class="msg-actions">
+                    <span class="msg-timestamp">${aiTime}</span>
+                    <button class="action-icon-btn" title="Copy response" onclick="copyMessage(this)">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                        </svg>
+                    </button>
+                </div>
+                <div class="msg">${data.reply || 'Responded successfully.'}</div>
+            `;
             list.appendChild(aiDiv);
             chatContainer.scrollTop = chatContainer.scrollHeight;
 
@@ -517,9 +632,15 @@
             const indicator = document.getElementById('aiTypingIndicator');
             if (indicator) indicator.remove();
 
+            const errTime = getCurrentTimeString();
             const errDiv = document.createElement('div');
             errDiv.className = 'msg-wrapper assistant';
-            errDiv.innerHTML = `<div class="msg">Something went wrong, please try again.</div>`;
+            errDiv.innerHTML = `
+                <div class="msg-actions">
+                    <span class="msg-timestamp">${errTime}</span>
+                </div>
+                <div class="msg">Something went wrong, please try again.</div>
+            `;
             list.appendChild(errDiv);
 
             checkMessageLimits();
