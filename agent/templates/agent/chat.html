@@ -179,10 +179,10 @@
         /* Limit Warning Banner */
         .limit-banner {
             background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); color: #EF4444;
-            padding: 10px 18px; border-radius: 12px; font-size: 13px; text-align: center; margin-bottom: 12px;
-            font-weight: 600; display: none; width: 100%;
+            padding: 12px 18px; border-radius: 14px; font-size: 13px; text-align: center; margin-bottom: 12px;
+            font-weight: 600; display: none; width: 100%; line-height: 1.5;
         }
-        .limit-banner a { color: #DC2626; font-weight: 800; text-decoration: underline; }
+        .limit-banner a { color: #6366F1; font-weight: 800; text-decoration: underline; margin-left: 6px; }
 
         .typing-indicator {
             display: flex; align-items: center; gap: 6px; padding: 14px 18px; background: var(--card-bg);
@@ -709,10 +709,33 @@
                 conversation_id: currentConversationId
             })
         })
-        .then(res => res.json())
-        .then(data => {
+        .then(async res => {
+            const data = await res.json();
+            return { ok: res.ok, status: res.status, data };
+        })
+        .then(({ ok, status, data }) => {
             const indicator = document.getElementById('aiTypingIndicator');
             if (indicator) indicator.remove();
+
+            // Handle Free Limit Exceeded (403 Forbidden)
+            if (!ok && (status === 403 || data.upgrade_required || data.login_required)) {
+                const banner = document.getElementById('limitBanner');
+                banner.style.display = 'block';
+                banner.innerHTML = `⚡ ${data.detail || 'Free limit reached.'} <a href="javascript:void(0)" onclick="openUpgradeModal()">Upgrade to Pro</a>`;
+
+                const errTime = getCurrentTimeString();
+                const warnDiv = document.createElement('div');
+                warnDiv.className = 'msg-wrapper assistant';
+                warnDiv.innerHTML = `
+                    <div class="msg-actions"><span class="msg-timestamp">${errTime}</span></div>
+                    <div class="msg" style="border: 1px solid rgba(239,68,68,0.4); background: rgba(239,68,68,0.08); color: #EF4444; font-weight: 500;">
+                        ⏳ ${data.detail || 'Free limit reached. Please upgrade to continue.'}
+                    </div>
+                `;
+                list.appendChild(warnDiv);
+                chatContainer.scrollTop = chatContainer.scrollHeight;
+                return;
+            }
 
             if (data.conversation_id && !currentConversationId) {
                 currentConversationId = data.conversation_id;
@@ -732,7 +755,7 @@
                         </svg>
                     </button>
                 </div>
-                <div class="msg">${data.reply || 'Responded successfully.'}</div>
+                <div class="msg">${data.reply || 'No response returned.'}</div>
             `;
             list.appendChild(aiDiv);
             chatContainer.scrollTop = chatContainer.scrollHeight;
@@ -747,10 +770,8 @@
             const errDiv = document.createElement('div');
             errDiv.className = 'msg-wrapper assistant';
             errDiv.innerHTML = `
-                <div class="msg-actions">
-                    <span class="msg-timestamp">${errTime}</span>
-                </div>
-                <div class="msg">Something went wrong, please try again.</div>
+                <div class="msg-actions"><span class="msg-timestamp">${errTime}</span></div>
+                <div class="msg" style="color: #EF4444;">Something went wrong, please try again.</div>
             `;
             list.appendChild(errDiv);
 

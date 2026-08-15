@@ -20,7 +20,7 @@ from .orchestrator import AgentOrchestrator
 from .serializers import ChatRequestSerializer, ConversationSerializer
 
 FREE_ANON_MESSAGE_LIMIT = 3
-FREE_MESSAGE_LIMIT = 8
+FREE_MESSAGE_LIMIT = 10  # 8 से बढ़ाकर 10 कर दिया गया है
 FREE_WINDOW_HOURS = 5
 
 
