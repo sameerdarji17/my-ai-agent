@@ -71,7 +71,6 @@
 
         .auth-card { background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 20px; padding: 28px; max-width: 440px; }
 
-        /* Custom Modern Premium Google Button */
         .btn-google-custom {
             width: 100%;
             display: flex;
@@ -94,14 +93,8 @@
             transform: translateY(-1px);
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
         }
-        .btn-google-custom:active {
-            transform: translateY(0);
-        }
-        .btn-google-custom svg {
-            width: 20px;
-            height: 20px;
-            flex-shrink: 0;
-        }
+        .btn-google-custom:active { transform: translateY(0); }
+        .btn-google-custom svg { width: 20px; height: 20px; flex-shrink: 0; }
 
         .divider { display: flex; align-items: center; text-align: center; margin: 20px 0; color: var(--text-muted); font-size: 12px; font-weight: 600; }
         .divider::before, .divider::after { content: ''; flex: 1; border-bottom: 1px solid var(--border-color); }
@@ -150,8 +143,8 @@
             <p class="subtitle-text">Your thinking partner for big ambitions</p>
 
             <div class="auth-card">
-                <!-- Custom Modern Google Sign In Button -->
-                <button type="button" class="btn-google-custom" onclick="triggerGoogleAuth()">
+                <!-- Custom Button opens Center OAuth Popup directly -->
+                <button type="button" class="btn-google-custom" onclick="loginWithGoogle()">
                     <svg viewBox="0 0 24 24">
                         <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
                         <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
@@ -160,9 +153,6 @@
                     </svg>
                     <span>Continue with Google</span>
                 </button>
-
-                <!-- Hidden Google Identity render node -->
-                <div id="hiddenGsiWrapper" style="display: none;"></div>
 
                 <div class="divider">OR</div>
 
@@ -181,60 +171,55 @@
     </div>
 
     <script>
+        let tokenClient;
+
         document.addEventListener("DOMContentLoaded", () => {
             const savedTheme = localStorage.getItem('selected_theme') || 'white';
             if (savedTheme === 'black') document.body.classList.add('theme-black');
             else if (savedTheme === 'darkblue') document.body.classList.add('theme-darkblue');
 
-            // Initialize GSI
+            // Initialize standard Center Popup OAuth 2.0
             const checkGsi = setInterval(() => {
-                if (window.google && google.accounts && google.accounts.id) {
+                if (window.google && google.accounts && google.accounts.oauth2) {
                     clearInterval(checkGsi);
-                    google.accounts.id.initialize({
-                        client_id: "863111260550-sk4hboauil823bt33uk7pinp2ouqtue4.apps.googleusercontent.com",
-                        callback: handleCredentialResponse,
-                        ux_mode: "popup"
+                    tokenClient = google.accounts.oauth2.initTokenClient({
+                        client_id: '863111260550-sk4hboauil823bt33uk7pinp2ouqtue4.apps.googleusercontent.com',
+                        scope: 'https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/userinfo.email',
+                        callback: handleTokenResponse,
                     });
                 }
             }, 100);
         });
 
-        function triggerGoogleAuth() {
-            if (window.google && google.accounts && google.accounts.id) {
-                google.accounts.id.prompt((notification) => {
-                    if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
-                        // Fallback click handler if one-tap is suppressed
-                        const dummyBtn = document.createElement('div');
-                        document.getElementById('hiddenGsiWrapper').innerHTML = '';
-                        document.getElementById('hiddenGsiWrapper').appendChild(dummyBtn);
-                        google.accounts.id.renderButton(dummyBtn, { type: "standard" });
-                        const realBtn = dummyBtn.querySelector('div[role="button"]');
-                        if (realBtn) realBtn.click();
-                    }
-                });
+        function loginWithGoogle() {
+            if (tokenClient) {
+                tokenClient.requestAccessToken({ prompt: 'select_account' });
             }
         }
 
-        function handleCredentialResponse(response) {
-            fetch('/api/auth/google/', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRFToken': '{{ csrf_token }}'
-                },
-                body: JSON.stringify({ token: response.credential })
-            })
-            .then(res => res.json())
-            .then(data => {
-                if (data.success) {
+        function handleTokenResponse(tokenResponse) {
+            if (tokenResponse && tokenResponse.access_token) {
+                fetch('/api/auth/google/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': '{{ csrf_token }}'
+                    },
+                    body: JSON.stringify({ access_token: tokenResponse.access_token })
+                })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success) {
+                        window.location.href = '/';
+                    } else {
+                        alert('Login failed: ' + (data.error || 'Please try again.'));
+                    }
+                })
+                .catch(err => {
+                    console.error(err);
                     window.location.href = '/';
-                } else {
-                    window.location.href = '/';
-                }
-            })
-            .catch(() => {
-                window.location.href = '/';
-            });
+                });
+            }
         }
     </script>
 </body>

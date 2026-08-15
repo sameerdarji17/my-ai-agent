@@ -48,12 +48,11 @@ def chat_page(request):
 
 @csrf_exempt
 def google_auth_api(request):
-    """Universal Google OAuth Login Handler."""
+    """Universal Google OAuth Login Handler with Access Token verification."""
     email = ""
     full_name = ""
-
-    # Handle GET request with access_token from Google Implicit Flow
     access_token = request.GET.get("access_token")
+
     if not access_token and request.method == "POST":
         try:
             body_data = json.loads(request.body.decode("utf-8"))
@@ -63,21 +62,24 @@ def google_auth_api(request):
         except Exception:
             pass
 
-    # Fetch User Info from Google if access_token is provided
+    # Fetch User Info from Google API
     if access_token and not email:
         try:
             req = urllib.request.Request(
                 "https://www.googleapis.com/oauth2/v3/userinfo",
                 headers={"Authorization": f"Bearer {access_token}"}
             )
-            with urllib.request.urlopen(req) as response:
+            with urllib.request.urlopen(req, timeout=10) as response:
                 user_info = json.loads(response.read().decode("utf-8"))
                 email = user_info.get("email", "").strip().lower()
                 full_name = user_info.get("name", "").strip()
         except Exception as e:
-            print("Google UserInfo Error:", e)
+            print("Google UserInfo API Error:", e)
+            return JsonResponse({"success": False, "error": str(e)}, status=400)
 
     if not email:
+        if request.headers.get("X-Requested-With") == "XMLHttpRequest" or request.content_type == "application/json":
+            return JsonResponse({"success": False, "error": "Email could not be verified"}, status=400)
         return redirect("signup")
 
     # Get or create User
@@ -102,8 +104,9 @@ def google_auth_api(request):
     auth_login(request, user, backend='django.contrib.auth.backends.ModelBackend')
     request.session.save()
 
-    if request.headers.get("X-Requested-With") == "XMLHttpRequest" or "application/json" in request.META.get("HTTP_ACCEPT", ""):
-        return JsonResponse({"status": "ok", "redirect_url": "/"})
+    # JSON Return for Frontend fetch
+    if request.headers.get("X-Requested-With") == "XMLHttpRequest" or request.content_type == "application/json" or request.method == "POST":
+        return JsonResponse({"success": True, "status": "ok", "redirect_url": "/"})
 
     return HttpResponseRedirect("/")
 
