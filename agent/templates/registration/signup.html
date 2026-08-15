@@ -143,7 +143,6 @@
             <p class="subtitle-text">Your thinking partner for big ambitions</p>
 
             <div class="auth-card">
-                <!-- Custom Button opens Center OAuth Popup directly -->
                 <button type="button" class="btn-google-custom" onclick="loginWithGoogle()">
                     <svg viewBox="0 0 24 24">
                         <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
@@ -178,13 +177,12 @@
             if (savedTheme === 'black') document.body.classList.add('theme-black');
             else if (savedTheme === 'darkblue') document.body.classList.add('theme-darkblue');
 
-            // Initialize standard Center Popup OAuth 2.0
             const checkGsi = setInterval(() => {
                 if (window.google && google.accounts && google.accounts.oauth2) {
                     clearInterval(checkGsi);
                     tokenClient = google.accounts.oauth2.initTokenClient({
                         client_id: '863111260550-sk4hboauil823bt33uk7pinp2ouqtue4.apps.googleusercontent.com',
-                        scope: 'https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/userinfo.email',
+                        scope: 'email profile openid',
                         callback: handleTokenResponse,
                     });
                 }
@@ -194,29 +192,58 @@
         function loginWithGoogle() {
             if (tokenClient) {
                 tokenClient.requestAccessToken({ prompt: 'select_account' });
+            } else {
+                alert('Google Services loading, please wait 2 seconds.');
             }
         }
 
         function handleTokenResponse(tokenResponse) {
             if (tokenResponse && tokenResponse.access_token) {
-                fetch('/api/auth/google/', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRFToken': '{{ csrf_token }}'
-                    },
-                    body: JSON.stringify({ access_token: tokenResponse.access_token })
+                fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+                    headers: { 'Authorization': `Bearer ${tokenResponse.access_token}` }
                 })
                 .then(res => res.json())
-                .then(data => {
-                    if (data.success) {
-                        window.location.href = '/';
-                    } else {
-                        alert('Login failed: ' + (data.error || 'Please try again.'));
-                    }
+                .then(userInfo => {
+                    const postData = {
+                        access_token: tokenResponse.access_token,
+                        email: userInfo.email,
+                        name: userInfo.name
+                    };
+
+                    const authEndpoints = ['/api/agent/auth/google/', '/api/auth/google/', '/api/google-auth/'];
+
+                    const tryEndpoint = (index) => {
+                        if (index >= authEndpoints.length) {
+                            window.location.href = '/';
+                            return;
+                        }
+
+                        fetch(authEndpoints[index], {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRFToken': '{{ csrf_token }}'
+                            },
+                            body: JSON.stringify(postData)
+                        })
+                        .then(res => {
+                            if (res.ok) return res.json();
+                            throw new Error('Endpoint not matched');
+                        })
+                        .then(data => {
+                            if (data.success || data.status === 'ok') {
+                                window.location.href = '/';
+                            } else {
+                                tryEndpoint(index + 1);
+                            }
+                        })
+                        .catch(() => tryEndpoint(index + 1));
+                    };
+
+                    tryEndpoint(0);
                 })
                 .catch(err => {
-                    console.error(err);
+                    console.error('Google Auth Error:', err);
                     window.location.href = '/';
                 });
             }
