@@ -5,7 +5,7 @@ import urllib.request
 import urllib.parse
 
 from django.conf import settings
-from django.http import JsonResponse, HttpResponseRedirect
+from django.http import JsonResponse, HttpResponseRedirect, HttpResponse
 from django.shortcuts import get_object_or_404, render, redirect
 from django.contrib.auth import login as auth_login, logout as auth_logout
 from django.contrib.auth.models import User
@@ -48,22 +48,45 @@ def chat_page(request):
 
 @csrf_exempt
 def google_auth_api(request):
-    """Universal Google OAuth Login Handler with Access Token verification."""
+    """Universal Google OAuth Login Handler (Supports Redirect & Direct Token)."""
+    access_token = request.GET.get("access_token")
     email = ""
     full_name = ""
-    access_token = request.GET.get("access_token")
 
+    # Check for token in POST JSON body
     if not access_token and request.method == "POST":
         try:
             body_data = json.loads(request.body.decode("utf-8"))
             access_token = body_data.get("access_token")
-            email = body_data.get("email", "").strip().lower()
-            full_name = body_data.get("name", "").strip()
         except Exception:
             pass
 
+    # If accessed directly via Google Implicit OAuth Redirect (URL hash containing token)
+    if not access_token and request.method == "GET":
+        return HttpResponse("""
+            <!DOCTYPE html>
+            <html>
+            <head><title>Logging In...</title></head>
+            <body style="font-family: sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; background: #09090B; color: #fff;">
+                <div style="text-align: center;">
+                    <p style="font-size: 18px;">Logging you in to SD AGENT...</p>
+                </div>
+                <script>
+                    const hash = window.location.hash.substring(1);
+                    const params = new URLSearchParams(hash);
+                    const token = params.get('access_token');
+                    if (token) {
+                        window.location.href = '/api/google-auth/?access_token=' + encodeURIComponent(token);
+                    } else {
+                        window.location.href = '/signup/';
+                    }
+                </script>
+            </body>
+            </html>
+        """)
+
     # Fetch User Info from Google API
-    if access_token and not email:
+    if access_token:
         try:
             req = urllib.request.Request(
                 "https://www.googleapis.com/oauth2/v3/userinfo",
@@ -75,14 +98,11 @@ def google_auth_api(request):
                 full_name = user_info.get("name", "").strip()
         except Exception as e:
             print("Google UserInfo API Error:", e)
-            return JsonResponse({"success": False, "error": str(e)}, status=400)
 
     if not email:
-        if request.headers.get("X-Requested-With") == "XMLHttpRequest" or request.content_type == "application/json":
-            return JsonResponse({"success": False, "error": "Email could not be verified"}, status=400)
         return redirect("signup")
 
-    # Get or create User
+    # Get or create User in Django DB
     user = User.objects.filter(email__iexact=email).first()
     if not user:
         base_username = email.split("@")[0]
@@ -103,10 +123,6 @@ def google_auth_api(request):
     # Perform Session Login
     auth_login(request, user, backend='django.contrib.auth.backends.ModelBackend')
     request.session.save()
-
-    # JSON Return for Frontend fetch
-    if request.headers.get("X-Requested-With") == "XMLHttpRequest" or request.content_type == "application/json" or request.method == "POST":
-        return JsonResponse({"success": True, "status": "ok", "redirect_url": "/"})
 
     return HttpResponseRedirect("/")
 
