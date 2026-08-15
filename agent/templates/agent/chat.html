@@ -67,8 +67,27 @@
 
         .logo-box { width: 36px; height: 36px; background: #0E0F12; border-radius: 10px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
 
-        .btn-new-chat { margin: 0 16px 16px; padding: 12px 16px; background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 12px; display: flex; align-items: center; gap: 10px; font-size: 14px; font-weight: 600; cursor: pointer; color: var(--text-main); }
-        .sidebar-scroll { flex: 1; overflow-y: auto; padding: 0 16px; }
+        .btn-new-chat { margin: 0 16px 12px; padding: 12px 16px; background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 12px; display: flex; align-items: center; gap: 10px; font-size: 14px; font-weight: 600; cursor: pointer; color: var(--text-main); }
+        .sidebar-scroll { flex: 1; overflow-y: auto; padding: 0 16px; display: flex; flex-direction: column; gap: 4px; }
+
+        .history-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 12px;
+            border-radius: 10px;
+            color: var(--text-main);
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            overflow: hidden;
+            border: 1px solid transparent;
+            transition: all 0.2s;
+        }
+        .history-item:hover { background: rgba(255, 255, 255, 0.08); border-color: var(--border-color); }
+        .history-item.active { background: rgba(99, 102, 241, 0.12); border-color: #6366F1; font-weight: 600; }
 
         .sidebar-footer { padding: 14px 16px; border-top: 1px solid var(--border-color); background: var(--sidebar-bg); display: flex; flex-direction: column; gap: 8px; }
         .btn-footer-signup { width: 100%; text-align: center; padding: 11px 16px; background: #6366F1; color: #FFFFFF; border-radius: 12px; text-decoration: none; font-size: 14px; font-weight: 700; display: flex; align-items: center; justify-content: center; }
@@ -232,8 +251,8 @@
         {% if is_authenticated %}
             <div style="display:flex; align-items:center; gap:12px; margin-bottom: 6px;">
                 <div style="width:36px; height:36px; background:#6366F1; color:#FFF; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:14px;">{{ username|slice:":2"|upper }}</div>
-                <div style="flex:1;">
-                    <div style="font-size:14px; font-weight:700;">{{ username }}</div>
+                <div style="flex:1; min-width:0;">
+                    <div style="font-size:14px; font-weight:700; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">{{ username }}</div>
                     <div style="font-size:12px; color:var(--text-muted);">Free Plan</div>
                 </div>
             </div>
@@ -341,6 +360,7 @@
 
 <script>
     const IS_AUTHENTICATED = {% if is_authenticated %}true{% else %}false{% endif %};
+    let currentConversationId = null;
 
     function toggleSidebar() {
         const sidebar = document.getElementById('sidebar');
@@ -372,9 +392,9 @@
         localStorage.setItem('selected_theme', theme);
     }
 
-    function getCurrentTimeString() {
-        const now = new Date();
-        return now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    function getCurrentTimeString(dateObj = null) {
+        const d = dateObj ? new Date(dateObj) : new Date();
+        return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     }
 
     function copyMessage(btn) {
@@ -398,7 +418,6 @@
         const msgDiv = wrapper.querySelector('.msg');
         let text = msgDiv.innerText;
 
-        // Remove [Attached: ...] tag if present
         text = text.replace(/^\[Attached:[^\]]+\]\n?/, '');
 
         const input = document.getElementById('userInput');
@@ -524,11 +543,95 @@
         setTimeout(typeEffect, speed);
     }
 
+    /* -------------------------------------------------------------
+       CHAT HISTORY LOADING & CONVERSATION MANAGEMENT
+    ------------------------------------------------------------- */
+    function loadChatHistory() {
+        fetch('/api/agent/conversations/')
+            .then(res => res.json())
+            .then(data => {
+                const listEl = document.getElementById('chatsHistoryList');
+                listEl.innerHTML = '';
+                if (data && Array.isArray(data) && data.length > 0) {
+                    data.forEach(conv => {
+                        const item = document.createElement('div');
+                        item.className = `history-item ${currentConversationId === conv.id ? 'active' : ''}`;
+                        item.innerText = conv.title || 'Untitled Conversation';
+                        item.onclick = () => loadSpecificChat(conv.id);
+                        listEl.appendChild(item);
+                    });
+                }
+            })
+            .catch(err => console.error("History fetch error:", err));
+    }
+
+    function loadSpecificChat(convId) {
+        currentConversationId = convId;
+
+        // Highlight active item in sidebar
+        const items = document.querySelectorAll('.history-item');
+        items.forEach(el => el.classList.remove('active'));
+
+        fetch(`/api/agent/conversations/${convId}/`)
+            .then(res => res.json())
+            .then(data => {
+                document.getElementById('welcomeBox').style.display = 'none';
+                const list = document.getElementById('messagesList');
+                list.innerHTML = '';
+
+                if (data.messages && Array.isArray(data.messages)) {
+                    data.messages.forEach(msg => {
+                        if (msg.role === 'tool_result') return;
+
+                        let textContent = msg.content;
+                        if (typeof textContent === 'object' && textContent !== null) {
+                            textContent = textContent.content || textContent.text || JSON.stringify(textContent);
+                        }
+
+                        const role = msg.role === 'user' ? 'user' : 'assistant';
+                        const timeStr = getCurrentTimeString(msg.created_at);
+
+                        const msgDiv = document.createElement('div');
+                        msgDiv.className = `msg-wrapper ${role}`;
+                        msgDiv.innerHTML = `
+                            <div class="msg-actions">
+                                <span class="msg-timestamp">${timeStr}</span>
+                                ${role === 'user' ? `
+                                <button class="action-icon-btn" title="Edit message" onclick="editMessage(this)">
+                                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                                    </svg>
+                                </button>` : ''}
+                                <button class="action-icon-btn" title="Copy text" onclick="copyMessage(this)">
+                                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                                        <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                                    </svg>
+                                </button>
+                            </div>
+                            <div class="msg">${textContent}</div>
+                        `;
+                        list.appendChild(msgDiv);
+                    });
+                }
+                const chatContainer = document.getElementById('chatContainer');
+                chatContainer.scrollTop = chatContainer.scrollHeight;
+
+                // Close sidebar on mobile after clicking
+                if (window.innerWidth < 900) {
+                    toggleSidebar();
+                }
+            })
+            .catch(err => console.error("Error loading chat:", err));
+    }
+
     document.addEventListener("DOMContentLoaded", () => {
         const savedTheme = localStorage.getItem('selected_theme') || 'white';
         setTheme(savedTheme);
         typeEffect();
         checkMessageLimits();
+        loadChatHistory();
     });
 
     function handleKeyDown(e) { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); } }
@@ -601,12 +704,20 @@
         fetch('/api/agent/chat/', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token }}' },
-            body: JSON.stringify({ message: displayContent })
+            body: JSON.stringify({
+                message: displayContent,
+                conversation_id: currentConversationId
+            })
         })
         .then(res => res.json())
         .then(data => {
             const indicator = document.getElementById('aiTypingIndicator');
             if (indicator) indicator.remove();
+
+            if (data.conversation_id && !currentConversationId) {
+                currentConversationId = data.conversation_id;
+                loadChatHistory();
+            }
 
             const aiTime = getCurrentTimeString();
             const aiDiv = document.createElement('div');
@@ -647,7 +758,12 @@
         });
     }
 
-    function startNewChat() { document.getElementById('messagesList').innerHTML = ''; document.getElementById('welcomeBox').style.display = 'flex'; }
+    function startNewChat() {
+        currentConversationId = null;
+        document.getElementById('messagesList').innerHTML = '';
+        document.getElementById('welcomeBox').style.display = 'flex';
+        loadChatHistory();
+    }
 </script>
 
 </body>

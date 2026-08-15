@@ -193,3 +193,18 @@ LOGOUT_REDIRECT_URL = "chat-page"
 # ---------------------------------------------------------------------------
 RAZORPAY_KEY_ID = os.environ.get("RAZORPAY_KEY_ID", "")
 RAZORPAY_KEY_SECRET = os.environ.get("RAZORPAY_KEY_SECRET", "")
+
+# ---------------------------------------------------------------------------
+# PERSISTENT SESSION & COOKIE SECURITY (HTTPS / RAILWAY)
+# ---------------------------------------------------------------------------
+SESSION_ENGINE = "django.contrib.sessions.backends.db"
+SESSION_COOKIE_AGE = 1209600  # 14 Days
+SESSION_EXPIRE_AT_BROWSER_CLOSE = False
+SESSION_SAVE_EVERY_REQUEST = True
+
+# Production Cookie Security
+SESSION_COOKIE_SECURE = not DEBUG
+CSRF_COOKIE_SECURE = not DEBUG
+SESSION_COOKIE_SAMESITE = "Lax"
+CSRF_COOKIE_SAMESITE = "Lax"
+SESSION_COOKIE_HTTPONLY = True
