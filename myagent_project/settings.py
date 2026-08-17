@@ -160,18 +160,27 @@ MAX_AGENT_TURNS = int(os.environ.get("MAX_AGENT_TURNS", "10"))
 MAX_HISTORY_MESSAGES = int(os.environ.get("MAX_HISTORY_MESSAGES", "8"))
 
 # ---------------------------------------------------------------------------
-# EMAIL CONFIGURATION
+# EMAIL CONFIGURATION (SSL 465 & TLS 587 Auto-Switch with Timeout)
 # ---------------------------------------------------------------------------
 EMAIL_HOST = os.environ.get("EMAIL_HOST", "smtp.gmail.com")
 
 try:
-    EMAIL_PORT = int(os.environ.get("EMAIL_PORT", "587"))
+    EMAIL_PORT = int(os.environ.get("EMAIL_PORT", "465"))
 except Exception:
-    EMAIL_PORT = 587
+    EMAIL_PORT = 465
 
-EMAIL_HOST_USER = os.environ.get("EMAIL_HOST_USER", "")
-EMAIL_HOST_PASSWORD = os.environ.get("EMAIL_HOST_PASSWORD", "")
-EMAIL_USE_TLS = os.environ.get("EMAIL_USE_TLS", "True").lower() in ("true", "1", "t")
+EMAIL_HOST_USER = os.environ.get("EMAIL_HOST_USER", "").strip()
+EMAIL_HOST_PASSWORD = os.environ.get("EMAIL_HOST_PASSWORD", "").strip().replace(" ", "")
+
+# Port 465 uses SSL, Port 587 uses TLS
+if EMAIL_PORT == 465:
+    EMAIL_USE_SSL = True
+    EMAIL_USE_TLS = False
+else:
+    EMAIL_USE_SSL = False
+    EMAIL_USE_TLS = True
+
+EMAIL_TIMEOUT = 15  # Gunicorn timeout / crash hone se rokta hai
 
 if EMAIL_HOST_USER and EMAIL_HOST_PASSWORD:
     EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
