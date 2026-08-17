@@ -4,6 +4,7 @@ import uuid
 import threading
 import urllib.request
 import urllib.parse
+import logging
 
 from django.conf import settings
 from django.core.mail import EmailMultiAlternatives
@@ -21,18 +22,20 @@ from .models import Conversation, Message
 from .orchestrator import AgentOrchestrator
 from .serializers import ChatRequestSerializer, ConversationSerializer
 
+logger = logging.getLogger(__name__)
+
 FREE_ANON_MESSAGE_LIMIT = 3
 FREE_MESSAGE_LIMIT = 10
 FREE_WINDOW_HOURS = 5
 
 
 def send_welcome_email(user_email, user_name="Explorer"):
-    """Sends a premium HTML welcome email in the background without delaying signup."""
+    """Sends a premium HTML welcome email in background thread ONLY ONCE on new registration."""
 
     def _send():
         try:
             subject = "Welcome to SD AGENT 🚀"
-            from_email = getattr(settings, "DEFAULT_FROM_EMAIL", "SD AGENT <support@sdagent.ai>")
+            from_email = getattr(settings, "DEFAULT_FROM_EMAIL", f"SD AGENT <{settings.EMAIL_HOST_USER}>")
             recipient_list = [user_email]
 
             site_url = getattr(settings, "SITE_BASE_URL", "https://sd-agent.up.railway.app")
@@ -89,9 +92,10 @@ def send_welcome_email(user_email, user_name="Explorer"):
 
             msg = EmailMultiAlternatives(subject, text_content, from_email, recipient_list)
             msg.attach_alternative(html_content, "text/html")
-            msg.send(fail_silently=True)
+            msg.send(fail_silently=False)
+            print(f"[SUCCESS] Welcome email sent to {user_email}")
         except Exception as e:
-            print("Welcome Email Error:", e)
+            print(f"[ERROR] Failed to send welcome email to {user_email}: {e}")
 
     threading.Thread(target=_send, daemon=True).start()
 
@@ -117,7 +121,6 @@ def chat_page(request):
             "is_premium": is_premium,
         },
     )
-    # Prevent browser back caching
     response["Cache-Control"] = "no-cache, no-store, must-revalidate, max-age=0"
     response["Pragma"] = "no-cache"
     response["Expires"] = "0"
@@ -179,6 +182,7 @@ def google_auth_api(request):
 
     user = User.objects.filter(email__iexact=email).first()
     if not user:
+        # BRAND NEW GOOGLE USER: Create and Send Welcome Email ONCE
         base_username = email.split("@")[0]
         username = f"{base_username}_{uuid.uuid4().hex[:6]}"
         name_parts = full_name.split(" ", 1) if full_name else [base_username]
@@ -193,7 +197,6 @@ def google_auth_api(request):
             last_name=last_name,
             is_active=True
         )
-        # Send branded welcome email to new Google OAuth user
         send_welcome_email(user.email, user.first_name or "Explorer")
 
     auth_login(request, user, backend='django.contrib.auth.backends.ModelBackend')
@@ -219,12 +222,14 @@ def signup_view(request):
             try:
                 user = User.objects.filter(email__iexact=email).first()
                 if user:
+                    # EXISTING USER LOGIN: Do NOT send welcome email again
                     if user.check_password(password):
                         auth_login(request, user, backend='django.contrib.auth.backends.ModelBackend')
                         return redirect("chat-page")
                     else:
                         error = "Invalid password for this email address."
                 else:
+                    # BRAND NEW USER SIGNUP: Create and Send Welcome Email ONCE
                     base_username = email.split("@")[0]
                     username = f"{base_username}_{uuid.uuid4().hex[:6]}"
                     name_parts = full_name.split(" ", 1) if full_name else [base_username]
@@ -239,7 +244,6 @@ def signup_view(request):
                         last_name=last_name,
                         is_active=True
                     )
-                    # Send branded welcome email to new signed-up user
                     send_welcome_email(new_user.email, new_user.first_name or "Explorer")
 
                     auth_login(request, new_user, backend='django.contrib.auth.backends.ModelBackend')
