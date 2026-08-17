@@ -8,6 +8,7 @@ urlpatterns = [
     path("login/", agent_views.login_view, name="login"),
     path("signup/", agent_views.signup_view, name="signup"),
     path("logout/", agent_views.logout_view, name="logout"),
+    path("test-email/", agent_views.test_email_view, name="test-email"),
     path("api/google-auth/", agent_views.google_auth_api, name="google-auth-api"),
     path("verify-email/<str:uidb64>/<str:token>/", agent_views.verify_email_view, name="verify-email"),
     path("api/agent/chat/", agent_views.AgentChatView.as_view(), name="agent-chat"),

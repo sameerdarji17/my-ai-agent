@@ -7,7 +7,7 @@ import urllib.parse
 import logging
 
 from django.conf import settings
-from django.core.mail import EmailMultiAlternatives
+from django.core.mail import EmailMultiAlternatives, send_mail
 from django.http import JsonResponse, HttpResponseRedirect, HttpResponse
 from django.shortcuts import get_object_or_404, render, redirect
 from django.contrib.auth import login as auth_login, logout as auth_logout
@@ -98,6 +98,25 @@ def send_welcome_email(user_email, user_name="Explorer"):
             print(f"[ERROR] Failed to send welcome email to {user_email}: {e}")
 
     threading.Thread(target=_send, daemon=True).start()
+
+
+def test_email_view(request):
+    """Direct live diagnostic to check email connection and credentials."""
+    target_email = request.GET.get("email", getattr(settings, "EMAIL_HOST_USER", ""))
+    if not target_email:
+        return HttpResponse("<h2 style='color:orange;'>Please provide an email in the query string: /test-email/?email=your_email@gmail.com</h2>")
+
+    try:
+        sent = send_mail(
+            subject="SD AGENT Test Connection 🚀",
+            message="This is a live test from SD AGENT to verify email credentials.",
+            from_email=getattr(settings, "DEFAULT_FROM_EMAIL", f"SD AGENT <{settings.EMAIL_HOST_USER}>"),
+            recipient_list=[target_email],
+            fail_silently=False,
+        )
+        return HttpResponse(f"<div style='font-family: sans-serif; padding: 24px;'><h2 style='color: green;'>✅ SUCCESS!</h2><p>Test email successfully dispatched to <strong>{target_email}</strong> (Sent status: {sent}). Please check your inbox/spam folder.</p></div>")
+    except Exception as e:
+        return HttpResponse(f"<div style='font-family: sans-serif; padding: 24px;'><h2 style='color: red;'>❌ ERROR: {type(e).__name__}</h2><pre style='background:#f4f4f5; padding:16px; border-radius:8px; border:1px solid #e4e4e7;'>{str(e)}</pre></div>")
 
 
 def chat_page(request):
