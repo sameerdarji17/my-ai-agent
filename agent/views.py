@@ -1,10 +1,12 @@
 import os
 import json
 import uuid
+import threading
 import urllib.request
 import urllib.parse
 
 from django.conf import settings
+from django.core.mail import EmailMultiAlternatives
 from django.http import JsonResponse, HttpResponseRedirect, HttpResponse
 from django.shortcuts import get_object_or_404, render, redirect
 from django.contrib.auth import login as auth_login, logout as auth_logout
@@ -20,8 +22,78 @@ from .orchestrator import AgentOrchestrator
 from .serializers import ChatRequestSerializer, ConversationSerializer
 
 FREE_ANON_MESSAGE_LIMIT = 3
-FREE_MESSAGE_LIMIT = 10  # 8 से बढ़ाकर 10 कर दिया गया है
+FREE_MESSAGE_LIMIT = 10
 FREE_WINDOW_HOURS = 5
+
+
+def send_welcome_email(user_email, user_name="Explorer"):
+    """Sends a premium HTML welcome email in the background without delaying signup."""
+
+    def _send():
+        try:
+            subject = "Welcome to SD AGENT 🚀"
+            from_email = getattr(settings, "DEFAULT_FROM_EMAIL", "SD AGENT <support@sdagent.ai>")
+            recipient_list = [user_email]
+
+            site_url = getattr(settings, "SITE_BASE_URL", "https://sd-agent.up.railway.app")
+
+            text_content = (
+                f"Hi {user_name},\n\n"
+                f"Welcome to SD AGENT! Start exploring your personal AI workspace:\n"
+                f"{site_url}\n\n"
+                f"Best,\nSD AGENT Team"
+            )
+
+            html_content = f"""
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <meta charset="UTF-8">
+                <style>
+                    body {{ font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #09090B; color: #FAFAFA; margin: 0; padding: 24px 12px; }}
+                    .card {{ max-width: 560px; margin: 0 auto; background-color: #18181B; border: 1px solid #27272A; border-radius: 18px; padding: 36px 30px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }}
+                    .brand {{ font-size: 24px; font-weight: 800; color: #8B8EFF; letter-spacing: 0.5px; text-decoration: none; text-align: center; margin-bottom: 20px; }}
+                    h1 {{ font-size: 22px; color: #FFFFFF; font-weight: 700; margin-bottom: 12px; }}
+                    p {{ font-size: 14px; line-height: 1.6; color: #A1A1AA; margin-bottom: 16px; }}
+                    .feature-box {{ background: #121215; border: 1px solid #27272A; border-radius: 12px; padding: 16px; margin: 20px 0; }}
+                    .feature-item {{ font-size: 13px; color: #E4E4E7; margin-bottom: 8px; }}
+                    .btn {{ display: inline-block; background-color: #6366F1; color: #FFFFFF !important; padding: 13px 28px; border-radius: 12px; font-weight: 700; text-decoration: none; font-size: 14px; margin-top: 10px; }}
+                    .footer {{ text-align: center; margin-top: 30px; font-size: 12px; color: #71717A; border-top: 1px solid #27272A; padding-top: 20px; }}
+                </style>
+            </head>
+            <body>
+                <div class="card">
+                    <div class="brand">SD AGENT</div>
+                    <h1>Welcome aboard, {user_name}! 👋</h1>
+                    <p>We're thrilled to have you! <strong>SD AGENT</strong> is your personal AI workspace built for intelligent coding, real-time research, and deep productivity.</p>
+
+                    <div class="feature-box">
+                        <div class="feature-item">⚡ <strong>Free AI Workspace:</strong> Start chatting and experimenting instantly.</div>
+                        <div class="feature-item">🔒 <strong>Persistent History:</strong> Your conversations are securely saved.</div>
+                        <div class="feature-item">🚀 <strong>Pro Upgrade:</strong> Unlock unlimited turns and advanced features anytime.</div>
+                    </div>
+
+                    <div style="text-align: center; margin: 26px 0;">
+                        <a href="{site_url}" class="btn">Launch SD AGENT ➔</a>
+                    </div>
+
+                    <p style="font-size: 13px; color: #71717A; text-align: center;">If you didn't create this account, you can safely ignore this email.</p>
+
+                    <div class="footer">
+                        &copy; 2026 SD AGENT. All rights reserved.
+                    </div>
+                </div>
+            </body>
+            </html>
+            """
+
+            msg = EmailMultiAlternatives(subject, text_content, from_email, recipient_list)
+            msg.attach_alternative(html_content, "text/html")
+            msg.send(fail_silently=True)
+        except Exception as e:
+            print("Welcome Email Error:", e)
+
+    threading.Thread(target=_send, daemon=True).start()
 
 
 def chat_page(request):
@@ -115,6 +187,8 @@ def google_auth_api(request):
             last_name=last_name,
             is_active=True
         )
+        # Send branded welcome email to new Google OAuth user
+        send_welcome_email(user.email, user.first_name or "Explorer")
 
     auth_login(request, user, backend='django.contrib.auth.backends.ModelBackend')
     request.session.save()
@@ -159,6 +233,9 @@ def signup_view(request):
                         last_name=last_name,
                         is_active=True
                     )
+                    # Send branded welcome email to new signed-up user
+                    send_welcome_email(new_user.email, new_user.first_name or "Explorer")
+
                     auth_login(request, new_user, backend='django.contrib.auth.backends.ModelBackend')
                     return redirect("chat-page")
             except Exception as e:
@@ -282,7 +359,8 @@ class ConversationListView(APIView):
         else:
             if not request.session.session_key:
                 return Response([])
-            conversations = Conversation.objects.filter(session_key=request.session.session_key).order_by('-updated_at')[:50]
+            conversations = Conversation.objects.filter(session_key=request.session.session_key).order_by(
+                '-updated_at')[:50]
         serializer = ConversationSerializer(conversations, many=True)
         return Response(serializer.data)
 

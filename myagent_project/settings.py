@@ -178,8 +178,11 @@ if EMAIL_HOST_USER and EMAIL_HOST_PASSWORD:
 else:
     EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
 
-DEFAULT_FROM_EMAIL = os.environ.get("DEFAULT_FROM_EMAIL", EMAIL_HOST_USER or "SD AGENT <no-reply@sd-agent.up.railway.app>")
-SITE_BASE_URL = os.environ.get("SITE_BASE_URL", "https://web-production-d823e.up.railway.app")
+DEFAULT_FROM_EMAIL = os.environ.get(
+    "DEFAULT_FROM_EMAIL",
+    f"SD AGENT <{EMAIL_HOST_USER}>" if EMAIL_HOST_USER else "SD AGENT <support@sdagent.ai>"
+)
+SITE_BASE_URL = os.environ.get("SITE_BASE_URL", "https://sd-agent.up.railway.app")
 
 # ---------------------------------------------------------------------------
 # AUTH
