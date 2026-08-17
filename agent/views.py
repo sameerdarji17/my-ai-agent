@@ -5,7 +5,6 @@ import threading
 import urllib.request
 import urllib.parse
 import logging
-import resend
 
 from django.conf import settings
 from django.http import JsonResponse, HttpResponseRedirect, HttpResponse
@@ -30,15 +29,15 @@ FREE_WINDOW_HOURS = 5
 
 
 def send_welcome_email(user_email, user_name="Explorer"):
-    """Sends a premium HTML welcome email via Resend HTTP API ONLY ONCE on new registration."""
+    """Sends a premium HTML welcome email via Brevo HTTP API ONLY ONCE on new registration."""
 
     def _send():
-        api_key = os.getenv("RESEND_API_KEY", "").strip()
+        api_key = os.getenv("BREVO_API_KEY", "").strip()
+        sender_email = os.getenv("SENDER_EMAIL", "sameerdarji56@gmail.com").strip()
         if not api_key:
-            print("[WARN] RESEND_API_KEY is not configured in environment variables.")
+            print("[WARN] BREVO_API_KEY is missing, skipping email.")
             return
 
-        resend.api_key = api_key
         site_url = getattr(settings, "SITE_BASE_URL", "https://sd-agent.up.railway.app")
 
         html_content = f"""
@@ -84,39 +83,63 @@ def send_welcome_email(user_email, user_name="Explorer"):
         </html>
         """
 
+        payload = {
+            "sender": {"name": "SD AGENT", "email": sender_email},
+            "to": [{"email": user_email, "name": user_name}],
+            "subject": "Welcome to SD AGENT 🚀",
+            "htmlContent": html_content
+        }
+
         try:
-            resend.Emails.send({
-                "from": "SD AGENT <onboarding@resend.dev>",
-                "to": [user_email],
-                "subject": "Welcome to SD AGENT 🚀",
-                "html": html_content,
-            })
-            print(f"[SUCCESS] Resend welcome email sent to {user_email}")
+            req = urllib.request.Request(
+                "https://api.brevo.com/v3/smtp/email",
+                data=json.dumps(payload).encode("utf-8"),
+                headers={
+                    "accept": "application/json",
+                    "api-key": api_key,
+                    "content-type": "application/json"
+                },
+                method="POST"
+            )
+            with urllib.request.urlopen(req, timeout=10) as response:
+                res_body = response.read().decode("utf-8")
+                print(f"[SUCCESS] Brevo email sent to {user_email}: {res_body}")
         except Exception as e:
-            print(f"[ERROR] Failed to send welcome email via Resend to {user_email}: {e}")
+            print(f"[ERROR] Failed to send email via Brevo to {user_email}: {e}")
 
     threading.Thread(target=_send, daemon=True).start()
 
 
 def test_email_view(request):
-    """Direct live diagnostic to check email connection via Resend HTTP API."""
-    target_email = request.GET.get("email", getattr(settings, "EMAIL_HOST_USER", ""))
-    if not target_email:
-        target_email = "onboarding@resend.dev"
+    """Direct live diagnostic to check email connection via Brevo HTTP API."""
+    target_email = request.GET.get("email", "sameerdarji56@gmail.com").strip()
+    api_key = os.getenv("BREVO_API_KEY", "").strip()
+    sender_email = os.getenv("SENDER_EMAIL", "sameerdarji56@gmail.com").strip()
 
-    api_key = os.getenv("RESEND_API_KEY", "").strip()
     if not api_key:
-        return HttpResponse("<div style='font-family:sans-serif; padding:24px;'><h2 style='color:orange;'>⚠️ RESEND_API_KEY Missing</h2><p>Please add RESEND_API_KEY in Railway Variables.</p></div>")
+        return HttpResponse("<div style='font-family:sans-serif; padding:24px;'><h2 style='color:orange;'>⚠️ BREVO_API_KEY Missing</h2><p>Please add BREVO_API_KEY in Railway Variables.</p></div>")
+
+    payload = {
+        "sender": {"name": "SD AGENT", "email": sender_email},
+        "to": [{"email": target_email}],
+        "subject": "SD AGENT Test Connection 🚀",
+        "htmlContent": "<h3>Success!</h3><p>This is a live test from SD AGENT delivered via Brevo HTTP API without domain restrictions.</p>"
+    }
 
     try:
-        resend.api_key = api_key
-        response = resend.Emails.send({
-            "from": "SD AGENT <onboarding@resend.dev>",
-            "to": [target_email],
-            "subject": "SD AGENT Test Connection 🚀",
-            "html": "<h3>Success!</h3><p>This is a live test from SD AGENT delivered via Resend HTTP API.</p>",
-        })
-        return HttpResponse(f"<div style='font-family: sans-serif; padding: 24px;'><h2 style='color: green;'>✅ SUCCESS!</h2><p>Test email successfully dispatched to <strong>{target_email}</strong>.<br>Resend Response ID: <code>{response}</code></p></div>")
+        req = urllib.request.Request(
+            "https://api.brevo.com/v3/smtp/email",
+            data=json.dumps(payload).encode("utf-8"),
+            headers={
+                "accept": "application/json",
+                "api-key": api_key,
+                "content-type": "application/json"
+            },
+            method="POST"
+        )
+        with urllib.request.urlopen(req, timeout=10) as response:
+            res_body = response.read().decode("utf-8")
+            return HttpResponse(f"<div style='font-family: sans-serif; padding: 24px;'><h2 style='color: green;'>✅ SUCCESS!</h2><p>Test email successfully dispatched to <strong>{target_email}</strong>.<br>Response: <code>{res_body}</code></p></div>")
     except Exception as e:
         return HttpResponse(f"<div style='font-family: sans-serif; padding: 24px;'><h2 style='color: red;'>❌ ERROR: {type(e).__name__}</h2><pre style='background:#f4f4f5; padding:16px; border-radius:8px; border:1px solid #e4e4e7;'>{str(e)}</pre></div>")
 
@@ -203,7 +226,6 @@ def google_auth_api(request):
 
     user = User.objects.filter(email__iexact=email).first()
     if not user:
-        # BRAND NEW GOOGLE USER: Create and Send Welcome Email ONCE
         base_username = email.split("@")[0]
         username = f"{base_username}_{uuid.uuid4().hex[:6]}"
         name_parts = full_name.split(" ", 1) if full_name else [base_username]
@@ -243,14 +265,12 @@ def signup_view(request):
             try:
                 user = User.objects.filter(email__iexact=email).first()
                 if user:
-                    # EXISTING USER LOGIN: Do NOT send welcome email again
                     if user.check_password(password):
                         auth_login(request, user, backend='django.contrib.auth.backends.ModelBackend')
                         return redirect("chat-page")
                     else:
                         error = "Invalid password for this email address."
                 else:
-                    # BRAND NEW USER SIGNUP: Create and Send Welcome Email ONCE
                     base_username = email.split("@")[0]
                     username = f"{base_username}_{uuid.uuid4().hex[:6]}"
                     name_parts = full_name.split(" ", 1) if full_name else [base_username]
