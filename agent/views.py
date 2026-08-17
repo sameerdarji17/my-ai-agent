@@ -5,9 +5,9 @@ import threading
 import urllib.request
 import urllib.parse
 import logging
+import resend
 
 from django.conf import settings
-from django.core.mail import EmailMultiAlternatives, send_mail
 from django.http import JsonResponse, HttpResponseRedirect, HttpResponse
 from django.shortcuts import get_object_or_404, render, redirect
 from django.contrib.auth import login as auth_login, logout as auth_logout
@@ -30,91 +30,93 @@ FREE_WINDOW_HOURS = 5
 
 
 def send_welcome_email(user_email, user_name="Explorer"):
-    """Sends a premium HTML welcome email in background thread ONLY ONCE on new registration."""
+    """Sends a premium HTML welcome email via Resend HTTP API ONLY ONCE on new registration."""
 
     def _send():
-        try:
-            subject = "Welcome to SD AGENT 🚀"
-            from_email = getattr(settings, "DEFAULT_FROM_EMAIL", f"SD AGENT <{settings.EMAIL_HOST_USER}>")
-            recipient_list = [user_email]
+        api_key = os.getenv("RESEND_API_KEY", "").strip()
+        if not api_key:
+            print("[WARN] RESEND_API_KEY is not configured in environment variables.")
+            return
 
-            site_url = getattr(settings, "SITE_BASE_URL", "https://sd-agent.up.railway.app")
+        resend.api_key = api_key
+        site_url = getattr(settings, "SITE_BASE_URL", "https://sd-agent.up.railway.app")
 
-            text_content = (
-                f"Hi {user_name},\n\n"
-                f"Welcome to SD AGENT! Start exploring your personal AI workspace:\n"
-                f"{site_url}\n\n"
-                f"Best,\nSD AGENT Team"
-            )
+        html_content = f"""
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset="UTF-8">
+            <style>
+                body {{ font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #09090B; color: #FAFAFA; margin: 0; padding: 24px 12px; }}
+                .card {{ max-width: 560px; margin: 0 auto; background-color: #18181B; border: 1px solid #27272A; border-radius: 18px; padding: 36px 30px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }}
+                .brand {{ font-size: 24px; font-weight: 800; color: #8B8EFF; letter-spacing: 0.5px; text-decoration: none; text-align: center; margin-bottom: 20px; }}
+                h1 {{ font-size: 22px; color: #FFFFFF; font-weight: 700; margin-bottom: 12px; }}
+                p {{ font-size: 14px; line-height: 1.6; color: #A1A1AA; margin-bottom: 16px; }}
+                .feature-box {{ background: #121215; border: 1px solid #27272A; border-radius: 12px; padding: 16px; margin: 20px 0; }}
+                .feature-item {{ font-size: 13px; color: #E4E4E7; margin-bottom: 8px; }}
+                .btn {{ display: inline-block; background-color: #6366F1; color: #FFFFFF !important; padding: 13px 28px; border-radius: 12px; font-weight: 700; text-decoration: none; font-size: 14px; margin-top: 10px; }}
+                .footer {{ text-align: center; margin-top: 30px; font-size: 12px; color: #71717A; border-top: 1px solid #27272A; padding-top: 20px; }}
+            </style>
+        </head>
+        <body>
+            <div class="card">
+                <div class="brand">SD AGENT</div>
+                <h1>Welcome aboard, {user_name}! 👋</h1>
+                <p>We're thrilled to have you! <strong>SD AGENT</strong> is your personal AI workspace built for intelligent coding, real-time research, and deep productivity.</p>
 
-            html_content = f"""
-            <!DOCTYPE html>
-            <html>
-            <head>
-                <meta charset="UTF-8">
-                <style>
-                    body {{ font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #09090B; color: #FAFAFA; margin: 0; padding: 24px 12px; }}
-                    .card {{ max-width: 560px; margin: 0 auto; background-color: #18181B; border: 1px solid #27272A; border-radius: 18px; padding: 36px 30px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }}
-                    .brand {{ font-size: 24px; font-weight: 800; color: #8B8EFF; letter-spacing: 0.5px; text-decoration: none; text-align: center; margin-bottom: 20px; }}
-                    h1 {{ font-size: 22px; color: #FFFFFF; font-weight: 700; margin-bottom: 12px; }}
-                    p {{ font-size: 14px; line-height: 1.6; color: #A1A1AA; margin-bottom: 16px; }}
-                    .feature-box {{ background: #121215; border: 1px solid #27272A; border-radius: 12px; padding: 16px; margin: 20px 0; }}
-                    .feature-item {{ font-size: 13px; color: #E4E4E7; margin-bottom: 8px; }}
-                    .btn {{ display: inline-block; background-color: #6366F1; color: #FFFFFF !important; padding: 13px 28px; border-radius: 12px; font-weight: 700; text-decoration: none; font-size: 14px; margin-top: 10px; }}
-                    .footer {{ text-align: center; margin-top: 30px; font-size: 12px; color: #71717A; border-top: 1px solid #27272A; padding-top: 20px; }}
-                </style>
-            </head>
-            <body>
-                <div class="card">
-                    <div class="brand">SD AGENT</div>
-                    <h1>Welcome aboard, {user_name}! 👋</h1>
-                    <p>We're thrilled to have you! <strong>SD AGENT</strong> is your personal AI workspace built for intelligent coding, real-time research, and deep productivity.</p>
-
-                    <div class="feature-box">
-                        <div class="feature-item">⚡ <strong>Free AI Workspace:</strong> Start chatting and experimenting instantly.</div>
-                        <div class="feature-item">🔒 <strong>Persistent History:</strong> Your conversations are securely saved.</div>
-                        <div class="feature-item">🚀 <strong>Pro Upgrade:</strong> Unlock unlimited turns and advanced features anytime.</div>
-                    </div>
-
-                    <div style="text-align: center; margin: 26px 0;">
-                        <a href="{site_url}" class="btn">Launch SD AGENT ➔</a>
-                    </div>
-
-                    <p style="font-size: 13px; color: #71717A; text-align: center;">If you didn't create this account, you can safely ignore this email.</p>
-
-                    <div class="footer">
-                        &copy; 2026 SD AGENT. All rights reserved.
-                    </div>
+                <div class="feature-box">
+                    <div class="feature-item">⚡ <strong>Free AI Workspace:</strong> Start chatting and experimenting instantly.</div>
+                    <div class="feature-item">🔒 <strong>Persistent History:</strong> Your conversations are securely saved.</div>
+                    <div class="feature-item">🚀 <strong>Pro Upgrade:</strong> Unlock unlimited turns and advanced features anytime.</div>
                 </div>
-            </body>
-            </html>
-            """
 
-            msg = EmailMultiAlternatives(subject, text_content, from_email, recipient_list)
-            msg.attach_alternative(html_content, "text/html")
-            msg.send(fail_silently=False)
-            print(f"[SUCCESS] Welcome email sent to {user_email}")
+                <div style="text-align: center; margin: 26px 0;">
+                    <a href="{site_url}" class="btn">Launch SD AGENT ➔</a>
+                </div>
+
+                <p style="font-size: 13px; color: #71717A; text-align: center;">If you didn't create this account, you can safely ignore this email.</p>
+
+                <div class="footer">
+                    &copy; 2026 SD AGENT. All rights reserved.
+                </div>
+            </div>
+        </body>
+        </html>
+        """
+
+        try:
+            resend.Emails.send({
+                "from": "SD AGENT <onboarding@resend.dev>",
+                "to": [user_email],
+                "subject": "Welcome to SD AGENT 🚀",
+                "html": html_content,
+            })
+            print(f"[SUCCESS] Resend welcome email sent to {user_email}")
         except Exception as e:
-            print(f"[ERROR] Failed to send welcome email to {user_email}: {e}")
+            print(f"[ERROR] Failed to send welcome email via Resend to {user_email}: {e}")
 
     threading.Thread(target=_send, daemon=True).start()
 
 
 def test_email_view(request):
-    """Direct live diagnostic to check email connection and credentials."""
+    """Direct live diagnostic to check email connection via Resend HTTP API."""
     target_email = request.GET.get("email", getattr(settings, "EMAIL_HOST_USER", ""))
     if not target_email:
-        return HttpResponse("<h2 style='color:orange;'>Please provide an email in the query string: /test-email/?email=your_email@gmail.com</h2>")
+        target_email = "onboarding@resend.dev"
+
+    api_key = os.getenv("RESEND_API_KEY", "").strip()
+    if not api_key:
+        return HttpResponse("<div style='font-family:sans-serif; padding:24px;'><h2 style='color:orange;'>⚠️ RESEND_API_KEY Missing</h2><p>Please add RESEND_API_KEY in Railway Variables.</p></div>")
 
     try:
-        sent = send_mail(
-            subject="SD AGENT Test Connection 🚀",
-            message="This is a live test from SD AGENT to verify email credentials.",
-            from_email=getattr(settings, "DEFAULT_FROM_EMAIL", f"SD AGENT <{settings.EMAIL_HOST_USER}>"),
-            recipient_list=[target_email],
-            fail_silently=False,
-        )
-        return HttpResponse(f"<div style='font-family: sans-serif; padding: 24px;'><h2 style='color: green;'>✅ SUCCESS!</h2><p>Test email successfully dispatched to <strong>{target_email}</strong> (Sent status: {sent}). Please check your inbox/spam folder.</p></div>")
+        resend.api_key = api_key
+        response = resend.Emails.send({
+            "from": "SD AGENT <onboarding@resend.dev>",
+            "to": [target_email],
+            "subject": "SD AGENT Test Connection 🚀",
+            "html": "<h3>Success!</h3><p>This is a live test from SD AGENT delivered via Resend HTTP API.</p>",
+        })
+        return HttpResponse(f"<div style='font-family: sans-serif; padding: 24px;'><h2 style='color: green;'>✅ SUCCESS!</h2><p>Test email successfully dispatched to <strong>{target_email}</strong>.<br>Resend Response ID: <code>{response}</code></p></div>")
     except Exception as e:
         return HttpResponse(f"<div style='font-family: sans-serif; padding: 24px;'><h2 style='color: red;'>❌ ERROR: {type(e).__name__}</h2><pre style='background:#f4f4f5; padding:16px; border-radius:8px; border:1px solid #e4e4e7;'>{str(e)}</pre></div>")
 
