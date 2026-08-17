@@ -97,7 +97,7 @@ def send_welcome_email(user_email, user_name="Explorer"):
 
 
 def chat_page(request):
-    """Serves the browser-based chat UI."""
+    """Serves the browser-based chat UI with cache prevention."""
     is_premium = False
     display_name = ""
     if request.user.is_authenticated:
@@ -106,7 +106,8 @@ def chat_page(request):
         sub, _ = Subscription.objects.get_or_create(user=request.user, defaults={"plan": "free", "status": "paid"})
         is_premium = sub.is_premium
         display_name = request.user.get_full_name() or request.user.first_name or request.user.email.split('@')[0]
-    return render(
+
+    response = render(
         request,
         "agent/chat.html",
         {
@@ -116,6 +117,11 @@ def chat_page(request):
             "is_premium": is_premium,
         },
     )
+    # Prevent browser back caching
+    response["Cache-Control"] = "no-cache, no-store, must-revalidate, max-age=0"
+    response["Pragma"] = "no-cache"
+    response["Expires"] = "0"
+    return response
 
 
 @csrf_exempt
@@ -250,9 +256,14 @@ def login_view(request):
 
 
 def logout_view(request):
-    """Logs out the user and redirects back to signup page."""
+    """Logs out the user, flushes session completely, and redirects directly to home chat page."""
     auth_logout(request)
-    return redirect("signup")
+    request.session.flush()
+    response = HttpResponseRedirect("/")
+    response["Cache-Control"] = "no-cache, no-store, must-revalidate, max-age=0"
+    response["Pragma"] = "no-cache"
+    response["Expires"] = "0"
+    return response
 
 
 def verify_email_view(request, uidb64, token):

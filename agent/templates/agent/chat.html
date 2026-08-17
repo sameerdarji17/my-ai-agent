@@ -4,6 +4,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
     <title>SD AGENT</title>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@600;700;800&display=swap" rel="stylesheet">
     <style>
@@ -386,6 +389,13 @@
     const IS_AUTHENTICATED = {% if is_authenticated %}true{% else %}false{% endif %};
     let currentConversationId = null;
 
+    // Handle browser back/forward buttons to prevent showing stale cached sessions
+    window.addEventListener("pageshow", function(event) {
+        if (event.persisted) {
+            window.location.reload();
+        }
+    });
+
     function toggleSidebar() {
         const sidebar = document.getElementById('sidebar');
         const overlay = document.getElementById('sidebarOverlay');
@@ -592,7 +602,6 @@
     function loadSpecificChat(convId) {
         currentConversationId = convId;
 
-        // Highlight active item in sidebar
         const items = document.querySelectorAll('.history-item');
         items.forEach(el => el.classList.remove('active'));
 
@@ -642,7 +651,6 @@
                 const chatContainer = document.getElementById('chatContainer');
                 chatContainer.scrollTop = chatContainer.scrollHeight;
 
-                // Close sidebar on mobile after clicking
                 if (window.innerWidth < 900) {
                     toggleSidebar();
                 }
@@ -677,7 +685,6 @@
 
         const currentTime = getCurrentTimeString();
 
-        // User message bubble with Timestamp, Edit icon, and Copy icon
         const userDiv = document.createElement('div');
         userDiv.className = 'msg-wrapper user';
         userDiv.innerHTML = `
@@ -703,7 +710,6 @@
         input.value = '';
         removeAttachment();
 
-        // Increment Guest Counter
         if (!IS_AUTHENTICATED) {
             let currentCount = parseInt(localStorage.getItem('sd_guest_chat_count') || '0');
             currentCount++;
@@ -741,7 +747,6 @@
             const indicator = document.getElementById('aiTypingIndicator');
             if (indicator) indicator.remove();
 
-            // Handle Free Limit Exceeded (403 Forbidden)
             if (!ok && (status === 403 || data.upgrade_required || data.login_required)) {
                 const banner = document.getElementById('limitBanner');
                 banner.style.display = 'block';
