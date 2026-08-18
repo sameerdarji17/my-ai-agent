@@ -224,6 +224,8 @@ def google_auth_api(request):
     if not email:
         return redirect("signup")
 
+    prior_session_key = request.session.session_key or ""
+
     user = User.objects.filter(email__iexact=email).first()
     if not user:
         base_username = email.split("@")[0]
@@ -241,9 +243,18 @@ def google_auth_api(request):
             is_active=True
         )
         send_welcome_email(user.email, user.first_name or "Explorer")
+    elif full_name and not user.first_name:
+        name_parts = full_name.split(" ", 1)
+        user.first_name = name_parts[0]
+        user.last_name = name_parts[1] if len(name_parts) > 1 else ""
+        user.save(update_fields=["first_name", "last_name"])
 
     auth_login(request, user, backend='django.contrib.auth.backends.ModelBackend')
     request.session.save()
+
+    # Migrate guest / anonymous chats to authenticated user
+    if prior_session_key:
+        Conversation.objects.filter(session_key=prior_session_key, owner__isnull=True).update(owner=user)
 
     return HttpResponseRedirect("/")
 
@@ -263,10 +274,19 @@ def signup_view(request):
             error = "Email and password are required."
         else:
             try:
+                prior_session_key = request.session.session_key or ""
                 user = User.objects.filter(email__iexact=email).first()
                 if user:
                     if user.check_password(password):
+                        if full_name and not user.first_name:
+                            name_parts = full_name.split(" ", 1)
+                            user.first_name = name_parts[0]
+                            user.last_name = name_parts[1] if len(name_parts) > 1 else ""
+                            user.save(update_fields=["first_name", "last_name"])
+
                         auth_login(request, user, backend='django.contrib.auth.backends.ModelBackend')
+                        if prior_session_key:
+                            Conversation.objects.filter(session_key=prior_session_key, owner__isnull=True).update(owner=user)
                         return redirect("chat-page")
                     else:
                         error = "Invalid password for this email address."
@@ -288,6 +308,8 @@ def signup_view(request):
                     send_welcome_email(new_user.email, new_user.first_name or "Explorer")
 
                     auth_login(request, new_user, backend='django.contrib.auth.backends.ModelBackend')
+                    if prior_session_key:
+                        Conversation.objects.filter(session_key=prior_session_key, owner__isnull=True).update(owner=new_user)
                     return redirect("chat-page")
             except Exception as e:
                 error = f"Authentication error: {str(e)}"

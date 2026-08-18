@@ -1,3 +1,6 @@
+import os
+import re
+import time
 import json
 import logging
 from django.conf import settings
@@ -32,7 +35,13 @@ class AgentOrchestrator:
         self.conversation = conversation
         self.is_premium = is_premium
         self.style = style
-        self.api_key = getattr(settings, "GEMINI_API_KEY", "")
+        self.api_keys = self._load_api_keys()
+
+    def _load_api_keys(self):
+        """Loads single or comma-separated API keys from settings or environment."""
+        raw_keys = getattr(settings, "GEMINI_API_KEYS", "") or getattr(settings, "GEMINI_API_KEY", "") or os.getenv("GEMINI_API_KEYS", "") or os.getenv("GEMINI_API_KEY", "")
+        keys = [k.strip() for k in str(raw_keys).split(",") if k.strip()]
+        return keys
 
     def _get_history(self):
         history = []
@@ -43,21 +52,20 @@ class AgentOrchestrator:
             history.append({"role": role, "parts": [content]})
         return history
 
-    def _get_active_model(self):
-        """Dynamically fetches an available Gemini model that supports generateContent."""
+    def _get_active_model_name(self):
+        """Prefers 1.5-flash for generous 1500 RPD free quota over low quota 2.5-flash."""
         try:
             available_models = [
                 m.name for m in genai.list_models()
                 if 'generateContent' in m.supported_generation_methods
             ]
 
-            # Prefer flash or pro models if available
-            for target in ["gemini-2.5-flash", "gemini-2.0-flash", "gemini-1.5-flash", "gemini-1.5-pro"]:
+            # 1.5-flash provides the best rate limits for free tier
+            for target in ["gemini-1.5-flash", "gemini-2.0-flash", "gemini-1.5-pro", "gemini-2.5-flash"]:
                 for full_name in available_models:
                     if target in full_name:
                         return full_name
 
-            # Fallback to any supported model
             if available_models:
                 return available_models[0]
         except Exception as e:
@@ -77,44 +85,60 @@ class AgentOrchestrator:
             Message.objects.create(conversation=self.conversation, role="assistant", content=reply_text)
             return {"reply": reply_text, "tool_trace": []}
 
-        if not self.api_key:
-            reply_text = "Error: GEMINI_API_KEY is not set in Railway environment variables."
+        if not self.api_keys:
+            reply_text = "Error: GEMINI_API_KEY is not configured in Railway environment variables."
             Message.objects.create(conversation=self.conversation, role="assistant", content=reply_text)
             return {"reply": reply_text, "tool_trace": []}
 
-        try:
-            genai.configure(api_key=self.api_key)
+        reply_text = ""
+        last_error = None
 
-            # Get exact valid model string from account
-            selected_model_name = self._get_active_model()
+        # Rotate across available API keys on rate-limit / quota errors
+        for key_index, current_key in enumerate(self.api_keys):
+            try:
+                genai.configure(api_key=current_key)
+                selected_model_name = self._get_active_model_name()
 
-            model = genai.GenerativeModel(
-                model_name=selected_model_name,
-                system_instruction=SYSTEM_INSTRUCTIONS
-            )
+                model = genai.GenerativeModel(
+                    model_name=selected_model_name,
+                    system_instruction=SYSTEM_INSTRUCTIONS
+                )
 
-            history = self._get_history()[:-1]
-            chat = model.start_chat(history=history)
+                history = self._get_history()[:-1]
+                chat = model.start_chat(history=history)
 
-            response = chat.send_message(user_message)
-            reply_text = response.text or ""
+                response = chat.send_message(user_message)
+                reply_text = response.text or ""
 
-            if "<function" in reply_text:
-                import re
-                reply_text = re.sub(r'<function/?[^>]+>', '', reply_text).strip()
-                if not reply_text:
-                    reply_text = "Aapke request ke anusar jankari mil gayi hai."
+                if "<function" in reply_text:
+                    reply_text = re.sub(r'<function/?[^>]+>', '', reply_text).strip()
+                    if not reply_text:
+                        reply_text = "Here is the information based on your request."
 
-            Message.objects.create(
-                conversation=self.conversation,
-                role="assistant",
-                content=reply_text
-            )
+                if reply_text:
+                    break
 
-            return {"reply": reply_text, "tool_trace": []}
+            except Exception as e:
+                err_msg = str(e)
+                logger.warning(f"API Key [{key_index + 1}/{len(self.api_keys)}] encountered error: {err_msg}")
+                last_error = e
+                # Check for 429 rate limit or quota issues and retry with next key
+                if "429" in err_msg or "quota" in err_msg.lower() or "resourceexhausted" in err_msg.lower():
+                    time.sleep(0.5)
+                    continue
+                else:
+                    break
 
-        except Exception as e:
-            logger.error(f"Error in AgentOrchestrator: {e}", exc_info=True)
-            detailed_error = f"API Error: {str(e)}"
-            Message.objects.create(conversation=self.conversation, role="assistant", content=detailed_error)
-            return {"reply": detailed_error, "tool_trace": []}
+        if not reply_text:
+            if last_error and ("429" in str(last_error) or "quota" in str(last_error).lower()):
+                reply_text = "⚡ SD AGENT is currently handling high query volume. Please wait a few seconds and send your query again!"
+            else:
+                reply_text = "Something went wrong while processing your request. Please try again in a moment."
+
+        Message.objects.create(
+            conversation=self.conversation,
+            role="assistant",
+            content=reply_text
+        )
+
+        return {"reply": reply_text, "tool_trace": []}

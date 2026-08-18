@@ -253,20 +253,30 @@
     <div class="sidebar-footer">
         {% if is_authenticated %}
             <div style="display:flex; align-items:center; gap:12px; margin-bottom: 6px;">
-                <div style="width:36px; height:36px; background:#6366F1; color:#FFF; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:14px;">{{ username|slice:":2"|upper }}</div>
+                <div style="width:36px; height:36px; background:#6366F1; color:#FFF; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:14px; text-transform:uppercase;">
+                    {{ username|slice:":1"|default:"U" }}
+                </div>
                 <div style="flex:1; min-width:0;">
-                    <div style="font-size:14px; font-weight:700; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">{{ username }}</div>
-                    <div style="font-size:12px; color:var(--text-muted);">Free Plan</div>
+                    <div style="font-size:14px; font-weight:700; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">{{ username|default:"Explorer" }}</div>
+                    <div style="font-size:12px; color:var(--text-muted);">
+                        {% if is_premium %}
+                            <span style="color: #10B981; font-weight: 700;">Pro Plan ✨</span>
+                        {% else %}
+                            Free Plan
+                        {% endif %}
+                    </div>
                 </div>
             </div>
         {% else %}
             <a href="{% url 'signup' %}" class="btn-footer-signup">Sign up</a>
         {% endif %}
 
+        {% if not is_premium %}
         <div class="footer-action-item" onclick="openUpgradeModal()" style="color: #6366F1;">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
             Upgrade Plan
         </div>
+        {% endif %}
 
         <div class="footer-action-item" onclick="openSettingsModal()">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
@@ -295,7 +305,13 @@
         </div>
 
         <div class="top-center-plan">
-            <span>Free plan</span> • <span class="upgrade-link" onclick="openUpgradeModal()">Upgrade</span>
+            {% if is_premium %}
+                <span style="color: #10B981; font-weight: 700; background: rgba(16, 185, 129, 0.12); padding: 4px 12px; border-radius: 20px; border: 1px solid rgba(16, 185, 129, 0.25);">
+                    ⚡ Pro Plan Active
+                </span>
+            {% else %}
+                <span>Free plan</span> • <span class="upgrade-link" onclick="openUpgradeModal()">Upgrade</span>
+            {% endif %}
         </div>
 
         <div></div>
@@ -389,7 +405,6 @@
     const IS_AUTHENTICATED = {% if is_authenticated %}true{% else %}false{% endif %};
     let currentConversationId = null;
 
-    // Handle browser back/forward buttons to prevent showing stale cached sessions
     window.addEventListener("pageshow", function(event) {
         if (event.persisted) {
             window.location.reload();
@@ -577,9 +592,6 @@
         setTimeout(typeEffect, speed);
     }
 
-    /* -------------------------------------------------------------
-       CHAT HISTORY LOADING & CONVERSATION MANAGEMENT
-    ------------------------------------------------------------- */
     function loadChatHistory() {
         fetch('/api/agent/conversations/')
             .then(res => res.json())
