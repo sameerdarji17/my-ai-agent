@@ -7,7 +7,12 @@
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
+
+    <!-- Google Search Console Verification Tag -->
     <meta name="google-site-verification" content="TQ8PNjTugm_PJQLd77FzCZVEeZBNUms7IlvBw0MdaUU" />
+
+    <!-- Browser Tab Favicon Logo -->
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='25' fill='%230E0F12'/><path d='M 38 28 C 24 28 22 42 36 48 C 50 54 48 72 32 72 C 24 72 20 66 18 60' stroke='%238B8EFF' stroke-width='11' stroke-linecap='round' fill='none'/><path d='M 48 25 L 48 75 C 78 75 78 25 48 25 Z' stroke='%238B8EFF' stroke-width='11' stroke-linejoin='round' fill='none'/></svg>">
 
     <!-- Primary SEO Meta Tags -->
     <title>SD AGENT - AI Assistant by Sameer Darji</title>
@@ -23,12 +28,6 @@
     <meta property="og:url" content="https://sd-agent.up.railway.app/">
     <meta property="og:title" content="SD AGENT - AI Assistant by Sameer Darji">
     <meta property="og:description" content="Your personal intelligent AI workspace for coding, analysis, and research developed by Sameer Darji.">
-
-    <!-- Twitter Preview -->
-    <meta property="twitter:card" content="summary_large_image">
-    <meta property="twitter:url" content="https://sd-agent.up.railway.app/">
-    <meta property="twitter:title" content="SD AGENT - AI Assistant by Sameer Darji">
-    <meta property="twitter:description" content="Your personal intelligent AI workspace developed by Sameer Darji.">
 
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@600;700;800&display=swap" rel="stylesheet">
     <style>
@@ -92,19 +91,22 @@
         .logo-box { width: 36px; height: 36px; background: #0E0F12; border-radius: 10px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
 
         .btn-new-chat { margin: 0 16px 12px; padding: 12px 16px; background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 12px; display: flex; align-items: center; gap: 10px; font-size: 14px; font-weight: 600; cursor: pointer; color: var(--text-main); }
-        .sidebar-scroll { flex: 1; overflow-y: auto; padding: 0 12px; display: flex; flex-direction: column; gap: 4px; }
+        .sidebar-scroll { flex: 1; overflow-y: auto; padding: 0 10px; display: flex; flex-direction: column; gap: 4px; }
 
-        /* History Items with Pin & Delete */
+        /* History Items with Always-Available Actions */
         .history-item-wrapper {
             position: relative;
             display: flex;
             align-items: center;
+            justify-content: space-between;
             border-radius: 10px;
-            padding: 4px 8px;
+            padding: 6px 10px;
+            border: 1px solid transparent;
             transition: all 0.2s;
+            cursor: pointer;
         }
-        .history-item-wrapper:hover { background: rgba(255, 255, 255, 0.08); }
-        .history-item-wrapper.active { background: rgba(99, 102, 241, 0.12); border: 1px solid rgba(99, 102, 241, 0.3); }
+        .history-item-wrapper:hover { background: rgba(255, 255, 255, 0.08); border-color: var(--border-color); }
+        .history-item-wrapper.active { background: rgba(99, 102, 241, 0.15); border-color: #6366F1; }
 
         .history-title-area {
             flex: 1;
@@ -112,8 +114,6 @@
             display: flex;
             align-items: center;
             gap: 8px;
-            cursor: pointer;
-            padding: 6px 4px;
         }
         .history-title-text {
             font-size: 13px;
@@ -128,29 +128,33 @@
             font-size: 12px;
             display: flex;
             align-items: center;
+            flex-shrink: 0;
         }
 
         .history-action-btns {
-            display: none;
+            display: flex;
             align-items: center;
-            gap: 4px;
+            gap: 2px;
+            opacity: 0;
+            transition: opacity 0.2s;
+            margin-left: 6px;
         }
-        .history-item-wrapper:hover .history-action-btns { display: flex; }
+        .history-item-wrapper:hover .history-action-btns { opacity: 1; }
 
         .btn-hist-action {
-            background: none;
+            background: transparent;
             border: none;
             color: var(--text-muted);
             cursor: pointer;
-            padding: 4px;
+            padding: 5px;
             border-radius: 6px;
             display: flex;
             align-items: center;
             justify-content: center;
-            transition: all 0.2s;
+            transition: all 0.15s;
         }
         .btn-hist-action:hover { color: var(--text-main); background: rgba(255,255,255,0.15); }
-        .btn-hist-action.delete:hover { color: #EF4444; }
+        .btn-hist-action.delete:hover { color: #EF4444; background: rgba(239, 68, 68, 0.15); }
 
         .sidebar-footer { padding: 14px 16px; border-top: 1px solid var(--border-color); background: var(--sidebar-bg); display: flex; flex-direction: column; gap: 8px; }
         .btn-footer-signup { width: 100%; text-align: center; padding: 11px 16px; background: #6366F1; color: #FFFFFF; border-radius: 12px; text-decoration: none; font-size: 14px; font-weight: 700; display: flex; align-items: center; justify-content: center; }
@@ -486,26 +490,29 @@
 
     function deleteChat(event, convId) {
         event.stopPropagation();
-        if (!confirm("Are you sure you want to delete this chat?")) return;
+        if (!confirm("Are you sure you want to delete this conversation?")) return;
 
+        // Delete from local hidden list immediately for instant UX feedback
+        let hidden = JSON.parse(localStorage.getItem('sd_deleted_chats') || '[]');
+        if (!hidden.includes(convId)) {
+            hidden.push(convId);
+            localStorage.setItem('sd_deleted_chats', JSON.stringify(hidden));
+        }
+
+        // Try backend delete
         fetch(`/api/agent/conversations/${convId}/`, {
             method: 'DELETE',
             headers: { 'X-CSRFToken': '{{ csrf_token }}' }
-        })
-        .then(() => {
-            let pinned = getPinnedChats().filter(id => id !== convId);
-            localStorage.setItem('sd_pinned_chats', JSON.stringify(pinned));
+        }).catch(e => console.log(e));
 
-            if (currentConversationId === convId) {
-                startNewChat();
-            } else {
-                loadChatHistory();
-            }
-        })
-        .catch(err => {
-            console.error("Delete conversation error:", err);
+        let pinned = getPinnedChats().filter(id => id !== convId);
+        localStorage.setItem('sd_pinned_chats', JSON.stringify(pinned));
+
+        if (currentConversationId === convId) {
+            startNewChat();
+        } else {
             loadChatHistory();
-        });
+        }
     }
 
     window.addEventListener("pageshow", function(event) {
@@ -702,9 +709,13 @@
                 listEl.innerHTML = '';
                 if (data && Array.isArray(data) && data.length > 0) {
                     const pinned = getPinnedChats();
+                    const deleted = JSON.parse(localStorage.getItem('sd_deleted_chats') || '[]');
+
+                    // Filter out deleted chats
+                    const filteredData = data.filter(c => !deleted.includes(c.id));
 
                     // Sort pinned chats to top
-                    data.sort((a, b) => {
+                    filteredData.sort((a, b) => {
                         const isAPinned = pinned.includes(a.id);
                         const isBPinned = pinned.includes(b.id);
                         if (isAPinned && !isBPinned) return -1;
@@ -712,7 +723,7 @@
                         return 0;
                     });
 
-                    data.forEach(conv => {
+                    filteredData.forEach(conv => {
                         const isPinned = pinned.includes(conv.id);
                         const itemWrapper = document.createElement('div');
                         itemWrapper.className = `history-item-wrapper ${currentConversationId === conv.id ? 'active' : ''}`;
@@ -721,13 +732,13 @@
                             <div class="history-title-area" onclick="loadSpecificChat(${conv.id})">
                                 ${isPinned ? `
                                 <span class="pinned-badge" title="Pinned">
-                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M16 12V4h1V2H7v2h1v8l-2 2v2h5.2v6h1.6v-6H18v-2l-2-2z"/></svg>
+                                    <svg width="13" height="13" viewBox="0 0 24 24" fill="#6366F1"><path d="M16 12V4h1V2H7v2h1v8l-2 2v2h5.2v6h1.6v-6H18v-2l-2-2z"/></svg>
                                 </span>` : ''}
                                 <span class="history-title-text">${conv.title || 'Untitled Conversation'}</span>
                             </div>
                             <div class="history-action-btns">
                                 <button class="btn-hist-action" title="${isPinned ? 'Unpin' : 'Pin'}" onclick="togglePinChat(event, ${conv.id})">
-                                    <svg width="13" height="13" viewBox="0 0 24 24" fill="${isPinned ? 'currentColor' : 'none'}" stroke="currentColor" stroke-width="2">
+                                    <svg width="13" height="13" viewBox="0 0 24 24" fill="${isPinned ? '#6366F1' : 'none'}" stroke="currentColor" stroke-width="2">
                                         <path d="M16 12V4h1V2H7v2h1v8l-2 2v2h5.2v6h1.6v-6H18v-2l-2-2z"/>
                                     </svg>
                                 </button>
@@ -748,9 +759,6 @@
 
     function loadSpecificChat(convId) {
         currentConversationId = convId;
-
-        const items = document.querySelectorAll('.history-item-wrapper');
-        items.forEach(el => el.classList.remove('active'));
 
         fetch(`/api/agent/conversations/${convId}/`)
             .then(res => res.json())
