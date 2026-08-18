@@ -93,20 +93,27 @@
         .btn-new-chat { margin: 0 16px 12px; padding: 12px 16px; background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 12px; display: flex; align-items: center; gap: 10px; font-size: 14px; font-weight: 600; cursor: pointer; color: var(--text-main); }
         .sidebar-scroll { flex: 1; overflow-y: auto; padding: 0 10px; display: flex; flex-direction: column; gap: 4px; }
 
-        /* History Items with Always-Available Actions */
+        /* FIXED HISTORY ITEM & BUTTONS */
         .history-item-wrapper {
             position: relative;
             display: flex;
             align-items: center;
             justify-content: space-between;
             border-radius: 10px;
-            padding: 6px 10px;
+            padding: 8px 10px;
             border: 1px solid transparent;
-            transition: all 0.2s;
+            background: transparent;
             cursor: pointer;
+            transition: all 0.2s ease;
         }
-        .history-item-wrapper:hover { background: rgba(255, 255, 255, 0.08); border-color: var(--border-color); }
-        .history-item-wrapper.active { background: rgba(99, 102, 241, 0.15); border-color: #6366F1; }
+        .history-item-wrapper:hover {
+            background: rgba(255, 255, 255, 0.08);
+            border-color: var(--border-color);
+        }
+        .history-item-wrapper.active {
+            background: rgba(99, 102, 241, 0.16) !important;
+            border-color: #6366F1 !important;
+        }
 
         .history-title-area {
             flex: 1;
@@ -123,38 +130,37 @@
             text-overflow: ellipsis;
             white-space: nowrap;
         }
-        .pinned-badge {
-            color: #6366F1;
-            font-size: 12px;
-            display: flex;
-            align-items: center;
-            flex-shrink: 0;
-        }
 
         .history-action-btns {
             display: flex;
             align-items: center;
-            gap: 2px;
-            opacity: 0;
-            transition: opacity 0.2s;
+            gap: 4px;
             margin-left: 6px;
+            flex-shrink: 0;
         }
-        .history-item-wrapper:hover .history-action-btns { opacity: 1; }
 
         .btn-hist-action {
-            background: transparent;
-            border: none;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border-color);
             color: var(--text-muted);
             cursor: pointer;
-            padding: 5px;
+            padding: 4px 6px;
             border-radius: 6px;
-            display: flex;
+            display: inline-flex;
             align-items: center;
             justify-content: center;
             transition: all 0.15s;
         }
-        .btn-hist-action:hover { color: var(--text-main); background: rgba(255,255,255,0.15); }
-        .btn-hist-action.delete:hover { color: #EF4444; background: rgba(239, 68, 68, 0.15); }
+        .btn-hist-action:hover {
+            color: var(--text-main);
+            border-color: #6366F1;
+            background: rgba(99, 102, 241, 0.15);
+        }
+        .btn-hist-action.delete:hover {
+            color: #EF4444;
+            border-color: #EF4444;
+            background: rgba(239, 68, 68, 0.15);
+        }
 
         .sidebar-footer { padding: 14px 16px; border-top: 1px solid var(--border-color); background: var(--sidebar-bg); display: flex; flex-direction: column; gap: 8px; }
         .btn-footer-signup { width: 100%; text-align: center; padding: 11px 16px; background: #6366F1; color: #FFFFFF; border-radius: 12px; text-decoration: none; font-size: 14px; font-weight: 700; display: flex; align-items: center; justify-content: center; }
@@ -467,7 +473,6 @@
     const IS_AUTHENTICATED = {% if is_authenticated %}true{% else %}false{% endif %};
     let currentConversationId = null;
 
-    // Pinning storage management
     function getPinnedChats() {
         try {
             return JSON.parse(localStorage.getItem('sd_pinned_chats') || '[]');
@@ -477,7 +482,10 @@
     }
 
     function togglePinChat(event, convId) {
-        event.stopPropagation();
+        if (event) {
+            event.stopPropagation();
+            event.preventDefault();
+        }
         let pinned = getPinnedChats();
         if (pinned.includes(convId)) {
             pinned = pinned.filter(id => id !== convId);
@@ -489,21 +497,22 @@
     }
 
     function deleteChat(event, convId) {
-        event.stopPropagation();
-        if (!confirm("Are you sure you want to delete this conversation?")) return;
+        if (event) {
+            event.stopPropagation();
+            event.preventDefault();
+        }
+        if (!confirm("Are you sure you want to delete this chat?")) return;
 
-        // Delete from local hidden list immediately for instant UX feedback
         let hidden = JSON.parse(localStorage.getItem('sd_deleted_chats') || '[]');
         if (!hidden.includes(convId)) {
             hidden.push(convId);
             localStorage.setItem('sd_deleted_chats', JSON.stringify(hidden));
         }
 
-        // Try backend delete
         fetch(`/api/agent/conversations/${convId}/`, {
             method: 'DELETE',
             headers: { 'X-CSRFToken': '{{ csrf_token }}' }
-        }).catch(e => console.log(e));
+        }).catch(e => console.log("Delete sync error:", e));
 
         let pinned = getPinnedChats().filter(id => id !== convId);
         localStorage.setItem('sd_pinned_chats', JSON.stringify(pinned));
@@ -711,10 +720,8 @@
                     const pinned = getPinnedChats();
                     const deleted = JSON.parse(localStorage.getItem('sd_deleted_chats') || '[]');
 
-                    // Filter out deleted chats
                     const filteredData = data.filter(c => !deleted.includes(c.id));
 
-                    // Sort pinned chats to top
                     filteredData.sort((a, b) => {
                         const isAPinned = pinned.includes(a.id);
                         const isBPinned = pinned.includes(b.id);
@@ -731,19 +738,19 @@
                         itemWrapper.innerHTML = `
                             <div class="history-title-area" onclick="loadSpecificChat(${conv.id})">
                                 ${isPinned ? `
-                                <span class="pinned-badge" title="Pinned">
-                                    <svg width="13" height="13" viewBox="0 0 24 24" fill="#6366F1"><path d="M16 12V4h1V2H7v2h1v8l-2 2v2h5.2v6h1.6v-6H18v-2l-2-2z"/></svg>
-                                </span>` : ''}
+                                <svg width="13" height="13" viewBox="0 0 24 24" fill="#6366F1" style="flex-shrink:0;">
+                                    <path d="M16 12V4h1V2H7v2h1v8l-2 2v2h5.2v6h1.6v-6H18v-2l-2-2z"/>
+                                </svg>` : ''}
                                 <span class="history-title-text">${conv.title || 'Untitled Conversation'}</span>
                             </div>
                             <div class="history-action-btns">
                                 <button class="btn-hist-action" title="${isPinned ? 'Unpin' : 'Pin'}" onclick="togglePinChat(event, ${conv.id})">
-                                    <svg width="13" height="13" viewBox="0 0 24 24" fill="${isPinned ? '#6366F1' : 'none'}" stroke="currentColor" stroke-width="2">
+                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="${isPinned ? '#6366F1' : 'none'}" stroke="currentColor" stroke-width="2">
                                         <path d="M16 12V4h1V2H7v2h1v8l-2 2v2h5.2v6h1.6v-6H18v-2l-2-2z"/>
                                     </svg>
                                 </button>
                                 <button class="btn-hist-action delete" title="Delete conversation" onclick="deleteChat(event, ${conv.id})">
-                                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                         <polyline points="3 6 5 6 21 6"></polyline>
                                         <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
                                     </svg>
@@ -767,7 +774,7 @@
                 const list = document.getElementById('messagesList');
                 list.innerHTML = '';
 
-                if (data.messages && Array.isArray(data.messages)) {
+                if (data && data.messages && Array.isArray(data.messages)) {
                     data.messages.forEach(msg => {
                         if (msg.role === 'tool_result') return;
 
@@ -811,7 +818,10 @@
                 }
                 loadChatHistory();
             })
-            .catch(err => console.error("Error loading chat:", err));
+            .catch(err => {
+                console.error("Error loading chat:", err);
+                loadChatHistory();
+            });
     }
 
     document.addEventListener("DOMContentLoaded", () => {
