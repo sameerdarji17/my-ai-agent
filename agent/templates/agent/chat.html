@@ -136,6 +136,7 @@
             align-items: center;
             gap: 8px;
             overflow: hidden;
+            pointer-events: none; /* Passes click to parent history-row */
         }
         .history-title-txt {
             font-size: 13px;
@@ -521,26 +522,31 @@
     let currentConversationId = null;
 
     function getPinnedChats() {
-        try { return JSON.parse(localStorage.getItem('sd_pinned_chats') || '[]'); } catch(e) { return []; }
+        try {
+            return (JSON.parse(localStorage.getItem('sd_pinned_chats') || '[]')).map(String);
+        } catch(e) { return []; }
     }
 
     function togglePin(convId) {
+        const idStr = String(convId);
         let pinned = getPinnedChats();
-        if (pinned.includes(convId)) {
-            pinned = pinned.filter(id => id !== convId);
+        if (pinned.includes(idStr)) {
+            pinned = pinned.filter(id => id !== idStr);
         } else {
-            pinned.push(convId);
+            pinned.push(idStr);
         }
         localStorage.setItem('sd_pinned_chats', JSON.stringify(pinned));
         loadChatHistory();
     }
 
     function deleteChat(convId) {
+        const idStr = String(convId);
         if (!confirm("Are you sure you want to delete this conversation?")) return;
 
-        let hidden = JSON.parse(localStorage.getItem('sd_deleted_chats') || '[]');
-        if (!hidden.includes(convId)) {
-            hidden.push(convId);
+        let hidden = [];
+        try { hidden = (JSON.parse(localStorage.getItem('sd_deleted_chats') || '[]')).map(String); } catch(e) {}
+        if (!hidden.includes(idStr)) {
+            hidden.push(idStr);
             localStorage.setItem('sd_deleted_chats', JSON.stringify(hidden));
         }
 
@@ -549,10 +555,10 @@
             headers: { 'X-CSRFToken': '{{ csrf_token }}' }
         }).catch(e => console.log("Delete error:", e));
 
-        let pinned = getPinnedChats().filter(id => id !== convId);
+        let pinned = getPinnedChats().filter(id => id !== idStr);
         localStorage.setItem('sd_pinned_chats', JSON.stringify(pinned));
 
-        if (currentConversationId === convId) {
+        if (String(currentConversationId) === idStr) {
             startNewChat();
         } else {
             loadChatHistory();
@@ -564,7 +570,7 @@
         document.querySelectorAll('.history-row').forEach(r => r.classList.remove('menu-open'));
     }
 
-    /* GLOBAL ROBUST EVENT DELEGATION (Fixes all clicking issues) */
+    /* GLOBAL ROBUST EVENT DELEGATION (Supports UUID & Numeric String IDs) */
     document.addEventListener('click', function(e) {
         // 1. New Chat Button Clicked
         if (e.target.closest('#btnNewChat')) {
@@ -576,6 +582,7 @@
         const dotsBtn = e.target.closest('[data-action="toggle-menu"]');
         if (dotsBtn) {
             e.stopPropagation();
+            e.preventDefault();
             const convId = dotsBtn.getAttribute('data-id');
             const menu = document.getElementById(`menu-${convId}`);
             const row = document.querySelector(`.history-row[data-id="${convId}"]`);
@@ -593,8 +600,9 @@
         const pinBtn = e.target.closest('[data-action="pin"]');
         if (pinBtn) {
             e.stopPropagation();
+            e.preventDefault();
+            const convId = pinBtn.getAttribute('data-id');
             closeAllDropdowns();
-            const convId = parseInt(pinBtn.getAttribute('data-id'));
             togglePin(convId);
             return;
         }
@@ -603,8 +611,9 @@
         const delBtn = e.target.closest('[data-action="delete"]');
         if (delBtn) {
             e.stopPropagation();
+            e.preventDefault();
+            const convId = delBtn.getAttribute('data-id');
             closeAllDropdowns();
-            const convId = parseInt(delBtn.getAttribute('data-id'));
             deleteChat(convId);
             return;
         }
@@ -613,7 +622,7 @@
         const row = e.target.closest('.history-row');
         if (row && !e.target.closest('.history-dropdown-menu') && !e.target.closest('.btn-three-dots')) {
             closeAllDropdowns();
-            const convId = parseInt(row.getAttribute('data-id'));
+            const convId = row.getAttribute('data-id');
             loadSpecificChat(convId);
             return;
         }
@@ -814,25 +823,30 @@
             .then(data => {
                 const listEl = document.getElementById('chatsHistoryList');
                 listEl.innerHTML = '';
-                if (data && Array.isArray(data) && data.length > 0) {
-                    const pinned = getPinnedChats();
-                    const deleted = JSON.parse(localStorage.getItem('sd_deleted_chats') || '[]');
 
-                    const filteredData = data.filter(c => !deleted.includes(c.id));
+                const convList = Array.isArray(data) ? data : (data.results || data.conversations || []);
+
+                if (convList && convList.length > 0) {
+                    const pinned = getPinnedChats();
+                    let deleted = [];
+                    try { deleted = (JSON.parse(localStorage.getItem('sd_deleted_chats') || '[]')).map(String); } catch(e) {}
+
+                    const filteredData = convList.filter(c => !deleted.includes(String(c.id)));
 
                     filteredData.sort((a, b) => {
-                        const isAPinned = pinned.includes(a.id);
-                        const isBPinned = pinned.includes(b.id);
+                        const isAPinned = pinned.includes(String(a.id));
+                        const isBPinned = pinned.includes(String(b.id));
                         if (isAPinned && !isBPinned) return -1;
                         if (!isAPinned && isBPinned) return 1;
                         return 0;
                     });
 
                     filteredData.forEach(conv => {
-                        const isPinned = pinned.includes(conv.id);
+                        const convIdStr = String(conv.id);
+                        const isPinned = pinned.includes(convIdStr);
                         const row = document.createElement('div');
-                        row.className = `history-row ${currentConversationId === conv.id ? 'active' : ''}`;
-                        row.setAttribute('data-id', conv.id);
+                        row.className = `history-row ${String(currentConversationId) === convIdStr ? 'active' : ''}`;
+                        row.setAttribute('data-id', convIdStr);
 
                         row.innerHTML = `
                             <div class="history-click-area">
@@ -842,15 +856,15 @@
                                 </svg>` : ''}
                                 <span class="history-title-txt">${conv.title || 'Untitled Conversation'}</span>
                             </div>
-                            <button class="btn-three-dots" data-action="toggle-menu" data-id="${conv.id}" title="Options">···</button>
-                            <div class="history-dropdown-menu" id="menu-${conv.id}">
-                                <button class="dropdown-item" data-action="pin" data-id="${conv.id}">
+                            <button class="btn-three-dots" data-action="toggle-menu" data-id="${convIdStr}" title="Options">···</button>
+                            <div class="history-dropdown-menu" id="menu-${convIdStr}">
+                                <button class="dropdown-item" data-action="pin" data-id="${convIdStr}">
                                     <svg width="13" height="13" viewBox="0 0 24 24" fill="${isPinned ? '#6366F1' : 'none'}" stroke="currentColor" stroke-width="2">
                                         <path d="M16 12V4h1V2H7v2h1v8l-2 2v2h5.2v6h1.6v-6H18v-2l-2-2z"/>
                                     </svg>
                                     ${isPinned ? 'Unpin chat' : 'Pin chat'}
                                 </button>
-                                <button class="dropdown-item del-item" data-action="delete" data-id="${conv.id}">
+                                <button class="dropdown-item del-item" data-action="delete" data-id="${convIdStr}">
                                     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                         <polyline points="3 6 5 6 21 6"></polyline>
                                         <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
@@ -882,9 +896,12 @@
                 const list = document.getElementById('messagesList');
                 list.innerHTML = '';
 
-                const messages = Array.isArray(data) ? data : (data.messages || []);
+                let messages = [];
+                if (Array.isArray(data)) messages = data;
+                else if (Array.isArray(data.messages)) messages = data.messages;
+                else if (Array.isArray(data.results)) messages = data.results;
 
-                if (Array.isArray(messages) && messages.length > 0) {
+                if (messages.length > 0) {
                     messages.forEach(msg => {
                         if (msg.role === 'tool_result' || msg.role === 'system') return;
 
