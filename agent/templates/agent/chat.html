@@ -23,6 +23,12 @@
     <meta name="robots" content="index, follow">
     <link rel="canonical" href="https://sd-agent.up.railway.app/">
 
+    <!-- Open Graph / Facebook / WhatsApp Preview -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://sd-agent.up.railway.app/">
+    <meta property="og:title" content="SD AGENT - AI Assistant by Sameer Darji">
+    <meta property="og:description" content="Your personal intelligent AI workspace for coding, analysis, and research developed by Sameer Darji.">
+
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@600;700;800&display=swap" rel="stylesheet">
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Plus Jakarta Sans', sans-serif; transition: background-color 0.25s, color 0.25s, border-color 0.25s; }
@@ -39,6 +45,7 @@
             --msg-user-text: #0F172A;
             --action-bg: #FFFFFF;
             --scrollbar-thumb: rgba(0, 0, 0, 0.15);
+            --dropdown-bg: #FFFFFF;
         }
 
         body.theme-black {
@@ -53,6 +60,7 @@
             --msg-user-text: #FAFAFA;
             --action-bg: #18181B;
             --scrollbar-thumb: rgba(255, 255, 255, 0.15);
+            --dropdown-bg: #18181B;
         }
 
         body.theme-darkblue {
@@ -67,6 +75,7 @@
             --msg-user-text: #F8FAFC;
             --action-bg: #1E293B;
             --scrollbar-thumb: rgba(255, 255, 255, 0.18);
+            --dropdown-bg: #1E293B;
         }
 
         /* 3PX ULTRA SLIM SCROLLBAR */
@@ -94,19 +103,22 @@
         .brand { font-family: 'Space Grotesk', sans-serif; font-size: 19px; font-weight: 800; color: var(--text-main); text-decoration: none; display: flex; align-items: center; gap: 10px; }
         .logo-box { width: 36px; height: 36px; background: #0E0F12; border-radius: 10px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
 
-        .btn-new-chat { margin: 0 16px 12px; padding: 12px 16px; background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 12px; display: flex; align-items: center; gap: 10px; font-size: 14px; font-weight: 600; cursor: pointer; color: var(--text-main); }
+        .btn-new-chat { margin: 0 16px 12px; padding: 12px 16px; background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 12px; display: flex; align-items: center; gap: 10px; font-size: 14px; font-weight: 600; cursor: pointer; color: var(--text-main); user-select: none; }
+        .btn-new-chat:hover { border-color: #6366F1; }
+
         .sidebar-scroll { flex: 1; overflow-y: auto; padding: 0 10px; display: flex; flex-direction: column; gap: 4px; }
 
-        /* FIXED HISTORY ITEM & HOVER CONTROLS */
+        /* CHAT HISTORY ROW & DROPDOWN */
         .history-row {
             display: flex;
             align-items: center;
             justify-content: space-between;
             border-radius: 10px;
-            padding: 6px 8px;
+            padding: 8px 10px;
             border: 1px solid transparent;
             cursor: pointer;
             position: relative;
+            user-select: none;
         }
         .history-row:hover {
             background: rgba(255, 255, 255, 0.08);
@@ -134,38 +146,68 @@
             white-space: nowrap;
         }
 
-        .history-btns {
-            display: flex;
-            align-items: center;
-            gap: 3px;
-            opacity: 0;
-            transition: opacity 0.15s ease;
-            margin-left: 6px;
-            flex-shrink: 0;
-        }
-        .history-row:hover .history-btns {
-            opacity: 1;
-        }
-
-        .icon-action-btn {
+        /* 3-DOTS BUTTON */
+        .btn-three-dots {
             background: transparent;
             border: none;
             color: var(--text-muted);
             cursor: pointer;
-            padding: 4px;
+            padding: 2px 6px;
             border-radius: 6px;
-            display: inline-flex;
+            display: flex;
             align-items: center;
             justify-content: center;
+            font-size: 18px;
+            line-height: 1;
+            font-weight: bold;
+            opacity: 0;
+            transition: all 0.15s ease;
+            flex-shrink: 0;
         }
-        .icon-action-btn:hover {
-            color: #6366F1;
-            background: rgba(99, 102, 241, 0.15);
+        .history-row:hover .btn-three-dots,
+        .history-row.menu-open .btn-three-dots {
+            opacity: 1;
         }
-        .icon-action-btn.del-btn:hover {
-            color: #EF4444;
-            background: rgba(239, 68, 68, 0.15);
+        .btn-three-dots:hover {
+            background: rgba(255, 255, 255, 0.15);
+            color: var(--text-main);
         }
+
+        /* POPUP DROPDOWN MENU */
+        .history-dropdown-menu {
+            position: absolute;
+            right: 8px;
+            top: calc(100% + 2px);
+            background: var(--dropdown-bg);
+            border: 1px solid var(--border-color);
+            box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+            border-radius: 10px;
+            padding: 4px;
+            display: none;
+            flex-direction: column;
+            z-index: 250;
+            min-width: 130px;
+        }
+        .history-dropdown-menu.show { display: flex; }
+
+        .dropdown-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 10px;
+            font-size: 12.5px;
+            font-weight: 600;
+            color: var(--text-main);
+            border-radius: 6px;
+            cursor: pointer;
+            border: none;
+            background: transparent;
+            width: 100%;
+            text-align: left;
+            transition: background 0.15s;
+        }
+        .dropdown-item:hover { background: rgba(99, 102, 241, 0.12); color: #6366F1; }
+        .dropdown-item.del-item:hover { background: rgba(239, 68, 68, 0.12); color: #EF4444; }
 
         .sidebar-footer { padding: 14px 16px; border-top: 1px solid var(--border-color); background: var(--sidebar-bg); display: flex; flex-direction: column; gap: 8px; }
         .btn-footer-signup { width: 100%; text-align: center; padding: 11px 16px; background: #6366F1; color: #FFFFFF; border-radius: 12px; text-decoration: none; font-size: 14px; font-weight: 700; display: flex; align-items: center; justify-content: center; }
@@ -316,10 +358,10 @@
         </button>
     </div>
 
-    <button class="btn-new-chat" onclick="startNewChat()">
+    <div class="btn-new-chat" id="btnNewChat">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
         New chat
-    </button>
+    </div>
 
     <div class="sidebar-scroll" id="chatsHistoryList"></div>
 
@@ -494,7 +536,7 @@
     }
 
     function deleteChat(convId) {
-        if (!confirm("Are you sure you want to delete this chat?")) return;
+        if (!confirm("Are you sure you want to delete this conversation?")) return;
 
         let hidden = JSON.parse(localStorage.getItem('sd_deleted_chats') || '[]');
         if (!hidden.includes(convId)) {
@@ -517,32 +559,67 @@
         }
     }
 
+    function closeAllDropdowns() {
+        document.querySelectorAll('.history-dropdown-menu').forEach(m => m.classList.remove('show'));
+        document.querySelectorAll('.history-row').forEach(r => r.classList.remove('menu-open'));
+    }
+
     /* GLOBAL ROBUST EVENT DELEGATION (Fixes all clicking issues) */
     document.addEventListener('click', function(e) {
-        // Pin Button Clicked
+        // 1. New Chat Button Clicked
+        if (e.target.closest('#btnNewChat')) {
+            startNewChat();
+            return;
+        }
+
+        // 2. Three Dots (···) Clicked
+        const dotsBtn = e.target.closest('[data-action="toggle-menu"]');
+        if (dotsBtn) {
+            e.stopPropagation();
+            const convId = dotsBtn.getAttribute('data-id');
+            const menu = document.getElementById(`menu-${convId}`);
+            const row = document.querySelector(`.history-row[data-id="${convId}"]`);
+            const isAlreadyOpen = menu && menu.classList.contains('show');
+
+            closeAllDropdowns();
+            if (!isAlreadyOpen && menu && row) {
+                menu.classList.add('show');
+                row.classList.add('menu-open');
+            }
+            return;
+        }
+
+        // 3. Pin Option Clicked inside menu
         const pinBtn = e.target.closest('[data-action="pin"]');
         if (pinBtn) {
             e.stopPropagation();
+            closeAllDropdowns();
             const convId = parseInt(pinBtn.getAttribute('data-id'));
             togglePin(convId);
             return;
         }
 
-        // Delete Button Clicked
+        // 4. Delete Option Clicked inside menu
         const delBtn = e.target.closest('[data-action="delete"]');
         if (delBtn) {
             e.stopPropagation();
+            closeAllDropdowns();
             const convId = parseInt(delBtn.getAttribute('data-id'));
             deleteChat(convId);
             return;
         }
 
-        // Chat History Row Clicked
+        // 5. Chat History Item Clicked (Opens Old Chat)
         const row = e.target.closest('.history-row');
-        if (row && !e.target.closest('.history-btns')) {
+        if (row && !e.target.closest('.history-dropdown-menu') && !e.target.closest('.btn-three-dots')) {
+            closeAllDropdowns();
             const convId = parseInt(row.getAttribute('data-id'));
             loadSpecificChat(convId);
+            return;
         }
+
+        // 6. Clicked anywhere else
+        closeAllDropdowns();
     });
 
     window.addEventListener("pageshow", function(event) {
@@ -765,17 +842,20 @@
                                 </svg>` : ''}
                                 <span class="history-title-txt">${conv.title || 'Untitled Conversation'}</span>
                             </div>
-                            <div class="history-btns">
-                                <button class="icon-action-btn" data-action="pin" data-id="${conv.id}" title="${isPinned ? 'Unpin' : 'Pin'}">
+                            <button class="btn-three-dots" data-action="toggle-menu" data-id="${conv.id}" title="Options">···</button>
+                            <div class="history-dropdown-menu" id="menu-${conv.id}">
+                                <button class="dropdown-item" data-action="pin" data-id="${conv.id}">
                                     <svg width="13" height="13" viewBox="0 0 24 24" fill="${isPinned ? '#6366F1' : 'none'}" stroke="currentColor" stroke-width="2">
                                         <path d="M16 12V4h1V2H7v2h1v8l-2 2v2h5.2v6h1.6v-6H18v-2l-2-2z"/>
                                     </svg>
+                                    ${isPinned ? 'Unpin chat' : 'Pin chat'}
                                 </button>
-                                <button class="icon-action-btn del-btn" data-action="delete" data-id="${conv.id}" title="Delete">
+                                <button class="dropdown-item del-item" data-action="delete" data-id="${conv.id}">
                                     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                         <polyline points="3 6 5 6 21 6"></polyline>
                                         <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
                                     </svg>
+                                    Delete chat
                                 </button>
                             </div>
                         `;
@@ -1004,9 +1084,15 @@
 
     function startNewChat() {
         currentConversationId = null;
+        document.querySelectorAll('.history-row').forEach(el => el.classList.remove('active'));
         document.getElementById('messagesList').innerHTML = '';
         document.getElementById('welcomeBox').style.display = 'flex';
-        loadChatHistory();
+        const input = document.getElementById('userInput');
+        input.value = '';
+        input.focus();
+        if (window.innerWidth < 900) {
+            toggleSidebar();
+        }
     }
 </script>
 
