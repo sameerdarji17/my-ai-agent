@@ -5,7 +5,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sign Up — SD AGENT</title>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@600;700;800&display=swap" rel="stylesheet">
+
+    <!-- Browser Tab Favicon Logo -->
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='25' fill='%230E0F12'/><path d='M 38 28 C 24 28 22 42 36 48 C 50 54 48 72 32 72 C 24 72 20 66 18 60' stroke='%238B8EFF' stroke-width='11' stroke-linecap='round' fill='none'/><path d='M 48 25 L 48 75 C 78 75 78 25 48 25 Z' stroke='%238B8EFF' stroke-width='11' stroke-linejoin='round' fill='none'/></svg>">
+
+    <!-- Fonts: Comfortaa for Instagram Aesthetic -->
+    <link href="https://fonts.googleapis.com/css2?family=Comfortaa:wght@700&family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@600;700;800&display=swap" rel="stylesheet">
 
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Plus Jakarta Sans', sans-serif; transition: background-color 0.25s, color 0.25s; }
@@ -55,11 +60,23 @@
             min-height: 100vh;
             display: flex;
             flex-direction: column;
-            padding: 24px 40px;
+            padding: 24px 40px 16px;
         }
 
-        .header { display: flex; align-items: center; margin-bottom: 40px; }
-        .brand { font-family: 'Space Grotesk', sans-serif; font-size: 20px; font-weight: 800; color: var(--text-main); text-decoration: none; display: flex; align-items: center; gap: 12px; }
+        .header { display: flex; align-items: center; margin-bottom: 30px; }
+
+        /* INSTAGRAM SANS STYLE LOGO TEXT */
+        .brand {
+            font-family: 'Comfortaa', cursive, sans-serif;
+            font-size: 21px;
+            font-weight: 700;
+            color: var(--text-main);
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            letter-spacing: -0.5px;
+        }
         .logo-box { width: 38px; height: 38px; background: #0E0F12; border-radius: 10px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
 
         .container { max-width: 1100px; margin: 0 auto; width: 100%; display: grid; grid-template-columns: 1fr 1fr; gap: 60px; align-items: center; flex: 1; }
@@ -118,6 +135,16 @@
         .side-image { width: 100%; max-height: 520px; object-fit: cover; display: block; transition: transform 0.5s ease; }
         .image-container:hover .side-image { transform: scale(1.06); }
 
+        /* FOOTER COPYRIGHT */
+        .signup-footer {
+            margin-top: auto;
+            padding-top: 24px;
+            text-align: center;
+            font-size: 12px;
+            color: var(--text-muted);
+            user-select: none;
+        }
+
         @media (max-width: 900px) { .container { grid-template-columns: 1fr; gap: 30px; } .image-container { display: none; } }
     </style>
 </head>
@@ -141,7 +168,6 @@
             <p class="subtitle-text">Your thinking partner for big ambitions</p>
 
             <div class="auth-card">
-                <!-- Direct OAuth Redirect to Google -->
                 <a href="https://accounts.google.com/o/oauth2/v2/auth?client_id=863111260550-sk4hboauil823bt33uk7pinp2ouqtue4.apps.googleusercontent.com&redirect_uri=https://sd-agent.up.railway.app/api/google-auth/&response_type=token&scope=email%20profile%20openid&prompt=select_account" class="btn-google-custom">
                     <svg viewBox="0 0 24 24">
                         <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
@@ -167,6 +193,11 @@
             <img src="https://images.unsplash.com/photo-1522071820081-009f0129c71c?auto=format&fit=crop&w=800&q=80" class="side-image" alt="Workspace">
         </div>
     </div>
+
+    <!-- CENTERED COPYRIGHT FOOTER -->
+    <footer class="signup-footer">
+        © 2026 SD AGENT • All rights reserved.
+    </footer>
 
     <script>
         document.addEventListener("DOMContentLoaded", () => {

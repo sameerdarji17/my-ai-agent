@@ -23,13 +23,8 @@
     <meta name="robots" content="index, follow">
     <link rel="canonical" href="https://sd-agent.up.railway.app/">
 
-    <!-- Open Graph / Facebook / WhatsApp Preview -->
-    <meta property="og:type" content="website">
-    <meta property="og:url" content="https://sd-agent.up.railway.app/">
-    <meta property="og:title" content="SD AGENT - AI Assistant by Sameer Darji">
-    <meta property="og:description" content="Your personal intelligent AI workspace for coding, analysis, and research developed by Sameer Darji.">
-
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@600;700;800&display=swap" rel="stylesheet">
+    <!-- Fonts: Comfortaa for Instagram Aesthetic -->
+    <link href="https://fonts.googleapis.com/css2?family=Comfortaa:wght@700&family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@600;700;800&display=swap" rel="stylesheet">
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Plus Jakarta Sans', sans-serif; transition: background-color 0.25s, color 0.25s, border-color 0.25s; }
 
@@ -100,7 +95,19 @@
         }
 
         .sidebar-header { padding: 18px 20px; display: flex; align-items: center; justify-content: space-between; }
-        .brand { font-family: 'Space Grotesk', sans-serif; font-size: 19px; font-weight: 800; color: var(--text-main); text-decoration: none; display: flex; align-items: center; gap: 10px; }
+
+        /* INSTAGRAM SANS STYLE LOGO TEXT */
+        .brand {
+            font-family: 'Comfortaa', cursive, sans-serif;
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--text-main);
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            letter-spacing: -0.5px;
+        }
         .logo-box { width: 36px; height: 36px; background: #0E0F12; border-radius: 10px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
 
         .btn-new-chat { margin: 0 16px 12px; padding: 12px 16px; background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 12px; display: flex; align-items: center; gap: 10px; font-size: 14px; font-weight: 600; cursor: pointer; color: var(--text-main); user-select: none; }
@@ -136,7 +143,7 @@
             align-items: center;
             gap: 8px;
             overflow: hidden;
-            pointer-events: none; /* Passes click to parent history-row */
+            pointer-events: none;
         }
         .history-title-txt {
             font-size: 13px;
@@ -221,9 +228,9 @@
         .top-bar {
             height: 60px;
             padding: 0 20px;
-            display: grid;
-            grid-template-columns: 40px 1fr 40px;
+            display: flex;
             align-items: center;
+            justify-content: space-between;
             border-bottom: 1px solid var(--border-color);
         }
         .toggle-btn { background: none; border: none; cursor: pointer; padding: 8px; color: var(--text-main); border-radius: 8px; }
@@ -234,10 +241,30 @@
             font-weight: 500;
             display: flex;
             align-items: center;
-            justify-content: center;
             gap: 8px;
         }
         .upgrade-link { color: #6366F1; text-decoration: none; font-weight: 700; cursor: pointer; padding: 5px 12px; background: rgba(99,102,241,0.1); border-radius: 8px; }
+
+        /* ABOUT ME BUTTON IN TOP RIGHT */
+        .btn-about-me {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 14px;
+            background: rgba(99, 102, 241, 0.1);
+            color: #6366F1;
+            border: 1px solid rgba(99, 102, 241, 0.25);
+            border-radius: 12px;
+            font-size: 13px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .btn-about-me:hover {
+            background: #6366F1;
+            color: #FFFFFF;
+            transform: translateY(-1px);
+        }
 
         .chat-container { flex: 1; overflow-y: auto; padding: 24px 20px; display: flex; flex-direction: column; align-items: center; }
         .welcome-box { margin: auto 0; text-align: center; max-width: 580px; display: flex; flex-direction: column; align-items: center; gap: 12px; }
@@ -312,8 +339,8 @@
         .dot:nth-child(2) { animation-delay: -0.16s; }
         @keyframes dotBounce { 0%, 80%, 100% { transform: scale(0); opacity: 0.3; } 40% { transform: scale(1); opacity: 1; } }
 
-        .input-wrapper { padding: 16px 20px; width: 100%; max-width: 780px; margin: 0 auto; }
-        .input-box { background: var(--input-bg); border: 1px solid var(--border-color); border-radius: 22px; padding: 14px 18px; box-shadow: 0 4px 20px rgba(0,0,0,0.04); display: flex; flex-direction: column; gap: 10px; }
+        .input-wrapper { padding: 12px 20px 8px; width: 100%; max-width: 780px; margin: 0 auto; display: flex; flex-direction: column; align-items: center; }
+        .input-box { width: 100%; background: var(--input-bg); border: 1px solid var(--border-color); border-radius: 22px; padding: 14px 18px; box-shadow: 0 4px 20px rgba(0,0,0,0.04); display: flex; flex-direction: column; gap: 10px; }
 
         .attachment-preview-bar { display: none; gap: 8px; align-items: center; flex-wrap: wrap; padding-bottom: 4px; }
         .attachment-chip { display: flex; align-items: center; gap: 6px; background: rgba(99,102,241,0.1); border: 1px solid #6366F1; color: var(--text-main); padding: 4px 10px; border-radius: 8px; font-size: 12px; font-weight: 600; }
@@ -332,8 +359,18 @@
         .btn-send-icon { background: #6366F1; color: #FFFFFF; border: none; width: 38px; height: 38px; border-radius: 12px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: transform 0.2s; }
         .btn-send-icon:hover { transform: scale(1.05); }
 
+        /* BOTTOM COPYRIGHT FOOTER */
+        .chat-bottom-copyright {
+            font-size: 11.5px;
+            color: var(--text-muted);
+            text-align: center;
+            margin-top: 8px;
+            letter-spacing: 0.2px;
+            user-select: none;
+        }
+
         .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); backdrop-filter: blur(4px); display: none; align-items: center; justify-content: center; z-index: 1000; padding: 20px; }
-        .modal-card { background: var(--card-bg); color: var(--text-main); padding: 24px; border-radius: 24px; max-width: 600px; width: 100%; border: 1px solid var(--border-color); }
+        .modal-card { background: var(--card-bg); color: var(--text-main); padding: 24px; border-radius: 24px; max-width: 600px; width: 100%; border: 1px solid var(--border-color); position: relative; }
 
         .theme-option-btn { display: flex; align-items: center; justify-content: space-between; padding: 14px 18px; border-radius: 14px; border: 1px solid var(--border-color); margin-top: 12px; cursor: pointer; font-weight: 600; }
         .theme-option-btn:hover { border-color: #6366F1; }
@@ -395,7 +432,7 @@
         {% endif %}
 
         <div class="footer-action-item" onclick="openSettingsModal()">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
             Settings
         </div>
 
@@ -414,7 +451,7 @@
 
 <main class="main-content">
     <header class="top-bar">
-        <div>
+        <div style="display:flex; align-items:center; gap:12px;">
             <button class="toggle-btn toggle-btn-top" onclick="toggleSidebar()">
                 <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12h18M3 6h18M3 18h18"/></svg>
             </button>
@@ -430,7 +467,13 @@
             {% endif %}
         </div>
 
-        <div></div>
+        <!-- ABOUT ME BUTTON (TOP RIGHT) -->
+        <div>
+            <button class="btn-about-me" onclick="openAboutModal()">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+                About Me
+            </button>
+        </div>
     </header>
 
     <div class="chat-container" id="chatContainer">
@@ -473,8 +516,45 @@
                 <button class="btn-send-icon" id="btnSend" onclick="sendMessage()"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg></button>
             </div>
         </div>
+        <!-- COPYRIGHT FOOTER IN MAIN CHAT -->
+        <div class="chat-bottom-copyright">
+            © 2026 SD AGENT • Developed by Sameer Darji
+        </div>
     </div>
 </main>
+
+<!-- ABOUT ME MODAL -->
+<div class="modal" id="aboutModal">
+    <div class="modal-card" style="max-width: 520px; text-align: center;">
+        <button onclick="closeAboutModal()" style="position:absolute; top:18px; right:20px; background:none; border:none; cursor:pointer; font-size:20px; color:var(--text-main);">✕</button>
+
+        <!-- Header with Logo & Instagram Font -->
+        <div style="display: flex; align-items: center; justify-content: center; gap: 10px; margin-bottom: 16px; margin-top: 6px;">
+            <div class="logo-box" style="width: 38px; height: 38px;">
+                <svg width="22" height="22" viewBox="0 0 100 100" fill="none">
+                    <path d="M 38 28 C 24 28 22 42 36 48 C 50 54 48 72 32 72 C 24 72 20 66 18 60" stroke="#8B8EFF" stroke-width="11" stroke-linecap="round"/>
+                    <path d="M 48 25 L 48 75 C 78 75 78 25 48 25 Z" stroke="#8B8EFF" stroke-width="11" stroke-linejoin="round"/>
+                </svg>
+            </div>
+            <span style="font-family: 'Comfortaa', cursive, sans-serif; font-size: 24px; font-weight: 700; color: var(--text-main); letter-spacing: -0.5px;">SD AGENT</span>
+        </div>
+
+        <div style="background: rgba(99, 102, 241, 0.06); border: 1px solid rgba(99, 102, 241, 0.2); border-radius: 16px; padding: 18px; margin-bottom: 20px;">
+            <div style="font-size: 13px; text-transform: uppercase; letter-spacing: 1px; color: #6366F1; font-weight: 700; margin-bottom: 4px;">Creator & Developer</div>
+            <div style="font-family: 'Space Grotesk', sans-serif; font-size: 20px; font-weight: 700; color: var(--text-main);">Sameer Darji</div>
+            <div style="font-size: 12px; color: var(--text-muted); margin-top: 2px;">Software Engineer & AI Enthusiast</div>
+        </div>
+
+        <div style="font-size: 14px; line-height: 1.7; color: var(--text-muted); text-align: left; background: var(--input-bg); border-radius: 14px; padding: 16px; border: 1px solid var(--border-color); margin-bottom: 20px;">
+            <p style="margin-bottom: 8px;">✨ <strong>SD AGENT</strong> is an advanced intelligent AI workspace built to assist in problem solving, code generation, creative writing, and deep Vedic astrology & kundali insights.</p>
+            <p>Designed for fast execution, seamless workflow, and intelligent conversations.</p>
+        </div>
+
+        <div style="font-size: 12px; color: var(--text-muted); padding-top: 10px; border-top: 1px solid var(--border-color);">
+            © 2026 SD AGENT • All rights reserved.
+        </div>
+    </div>
+</div>
 
 <div class="modal" id="settingsModal">
     <div class="modal-card">
@@ -570,15 +650,20 @@
         document.querySelectorAll('.history-row').forEach(r => r.classList.remove('menu-open'));
     }
 
-    /* GLOBAL ROBUST EVENT DELEGATION (Supports UUID & Numeric String IDs) */
+    function openAboutModal() { document.getElementById('aboutModal').style.display = 'flex'; }
+    function closeAboutModal() { document.getElementById('aboutModal').style.display = 'none'; }
+    function openUpgradeModal() { document.getElementById('upgradeModal').style.display = 'flex'; }
+    function closeUpgradeModal() { document.getElementById('upgradeModal').style.display = 'none'; }
+    function openSettingsModal() { document.getElementById('settingsModal').style.display = 'flex'; }
+    function closeSettingsModal() { document.getElementById('settingsModal').style.display = 'none'; }
+
+    /* GLOBAL ROBUST EVENT DELEGATION */
     document.addEventListener('click', function(e) {
-        // 1. New Chat Button Clicked
         if (e.target.closest('#btnNewChat')) {
             startNewChat();
             return;
         }
 
-        // 2. Three Dots (···) Clicked
         const dotsBtn = e.target.closest('[data-action="toggle-menu"]');
         if (dotsBtn) {
             e.stopPropagation();
@@ -596,7 +681,6 @@
             return;
         }
 
-        // 3. Pin Option Clicked inside menu
         const pinBtn = e.target.closest('[data-action="pin"]');
         if (pinBtn) {
             e.stopPropagation();
@@ -607,7 +691,6 @@
             return;
         }
 
-        // 4. Delete Option Clicked inside menu
         const delBtn = e.target.closest('[data-action="delete"]');
         if (delBtn) {
             e.stopPropagation();
@@ -618,7 +701,6 @@
             return;
         }
 
-        // 5. Chat History Item Clicked (Opens Old Chat)
         const row = e.target.closest('.history-row');
         if (row && !e.target.closest('.history-dropdown-menu') && !e.target.closest('.btn-three-dots')) {
             closeAllDropdowns();
@@ -627,7 +709,6 @@
             return;
         }
 
-        // 6. Clicked anywhere else
         closeAllDropdowns();
     });
 
@@ -643,11 +724,6 @@
         if (window.innerWidth >= 900) sidebar.classList.toggle('collapsed');
         else { sidebar.classList.toggle('active'); overlay.classList.toggle('active'); }
     }
-
-    function openUpgradeModal() { document.getElementById('upgradeModal').style.display = 'flex'; }
-    function closeUpgradeModal() { document.getElementById('upgradeModal').style.display = 'none'; }
-    function openSettingsModal() { document.getElementById('settingsModal').style.display = 'flex'; }
-    function closeSettingsModal() { document.getElementById('settingsModal').style.display = 'none'; }
 
     function setTheme(theme) {
         document.body.classList.remove('theme-black', 'theme-darkblue');
