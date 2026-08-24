@@ -8,11 +8,11 @@ from pathlib import Path
 import dj_database_url
 from dotenv import load_dotenv
 
-# Ensure GEMINI_API_KEY is read from environment variables
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
-
 BASE_DIR = Path(__file__).resolve().parent.parent
 load_dotenv(BASE_DIR / ".env")
+
+# Ensure GEMINI_API_KEY is read from environment variables
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
 
 # ---------------------------------------------------------------------------
 # SECURITY
@@ -22,10 +22,14 @@ DEBUG = os.environ.get("DJANGO_DEBUG", "True") == "True"
 
 ALLOWED_HOSTS = ["*"]
 
+# Railway Reverse Proxy Header for HTTPS
+SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+
 CSRF_TRUSTED_ORIGINS = [
+    "https://*.railway.app",
     "https://*.up.railway.app",
-    "https://web-production-d823e.up.railway.app",
     "https://sd-agent.up.railway.app",
+    "https://*.onrender.com",
     "http://localhost:8000",
     "http://127.0.0.1:8000",
 ]
@@ -63,12 +67,12 @@ MIDDLEWARE = [
 ROOT_URLCONF = "myagent_project.urls"
 
 # ---------------------------------------------------------------------------
-# TEMPLATES (FIXED BACKEND PATH)
+# TEMPLATES
 # ---------------------------------------------------------------------------
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
-        "DIRS": [],
+        "DIRS": [BASE_DIR / "templates"],
         "APP_DIRS": True,
         "OPTIONS": {
             "context_processors": [
@@ -108,14 +112,16 @@ USE_I18N = True
 USE_TZ = True
 
 # ---------------------------------------------------------------------------
-# STATIC FILES CONFIGURATION
+# STATIC FILES CONFIGURATION (SAFE CHECK)
 # ---------------------------------------------------------------------------
 STATIC_URL = "/static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
 
-STATICFILES_DIRS = [
-    BASE_DIR / "static",
-]
+static_folder = BASE_DIR / "static"
+if static_folder.exists():
+    STATICFILES_DIRS = [static_folder]
+else:
+    STATICFILES_DIRS = []
 
 STATICFILES_STORAGE = "whitenoise.storage.CompressedStaticFilesStorage"
 
@@ -160,7 +166,7 @@ MAX_AGENT_TURNS = int(os.environ.get("MAX_AGENT_TURNS", "10"))
 MAX_HISTORY_MESSAGES = int(os.environ.get("MAX_HISTORY_MESSAGES", "8"))
 
 # ---------------------------------------------------------------------------
-# EMAIL CONFIGURATION (SSL 465 & TLS 587 Auto-Switch with Timeout)
+# EMAIL CONFIGURATION
 # ---------------------------------------------------------------------------
 EMAIL_HOST = os.environ.get("EMAIL_HOST", "smtp.gmail.com")
 
@@ -172,7 +178,6 @@ except Exception:
 EMAIL_HOST_USER = os.environ.get("EMAIL_HOST_USER", "").strip()
 EMAIL_HOST_PASSWORD = os.environ.get("EMAIL_HOST_PASSWORD", "").strip().replace(" ", "")
 
-# Port 465 uses SSL, Port 587 uses TLS
 if EMAIL_PORT == 465:
     EMAIL_USE_SSL = True
     EMAIL_USE_TLS = False
@@ -180,7 +185,7 @@ else:
     EMAIL_USE_SSL = False
     EMAIL_USE_TLS = True
 
-EMAIL_TIMEOUT = 15  # Gunicorn timeout / crash hone se rokta hai
+EMAIL_TIMEOUT = 15
 
 if EMAIL_HOST_USER and EMAIL_HOST_PASSWORD:
     EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
@@ -207,7 +212,7 @@ RAZORPAY_KEY_ID = os.environ.get("RAZORPAY_KEY_ID", "")
 RAZORPAY_KEY_SECRET = os.environ.get("RAZORPAY_KEY_SECRET", "")
 
 # ---------------------------------------------------------------------------
-# PERSISTENT SESSION & COOKIE SECURITY (HTTPS / RAILWAY)
+# PERSISTENT SESSION & COOKIE SECURITY
 # ---------------------------------------------------------------------------
 SESSION_ENGINE = "django.contrib.sessions.backends.db"
 SESSION_COOKIE_AGE = 1209600  # 14 Days
