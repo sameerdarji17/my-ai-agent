@@ -16,6 +16,7 @@ psycopg2-binary==2.9.9
 pyswisseph==2.10.3.2
 h3==4.5.0
 resend
-psycopg2-binary
+psycopg[binary]
+psycopg[c]
 timezonefinder>=6.5.3
 google-generativeai
