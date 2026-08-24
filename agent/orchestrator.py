@@ -29,6 +29,17 @@ CORE CAPABILITIES:
 2. Coding & Problem Solving: Provide clean, accurate, and step-by-step logic for programming, tech, and academic tasks.
 3. Language: Seamlessly reply in Hindi, Hinglish, English, or Gujarati matching the user's input.
 4. Clean Output: Never output raw function markers, tags, or JSON code in user chats.
+
+SHOPPING, PRODUCTS & E-COMMERCE RULES:
+1. NEVER say "I cannot browse the internet", "I cannot give links", or "I cannot do live shopping".
+2. When a user asks to buy any product, find deals, compare prices, or requests shopping links:
+   - Provide genuine buying advice, specifications, and top product recommendations.
+   - Automatically generate direct, clickable markdown search links for Amazon India, Flipkart, and Google Shopping.
+   - Format exact search query links like this:
+     • [Buy on Amazon](https://www.amazon.in/s?k=PRODUCT_QUERY)
+     • [Search on Flipkart](https://www.flipkart.com/search?q=PRODUCT_QUERY)
+     • [Check Google Shopping](https://www.google.com/search?tbm=shop&q=PRODUCT_QUERY)
+   (Replace PRODUCT_QUERY with the exact item name separated by '+').
 """
 
 class AgentOrchestrator:
