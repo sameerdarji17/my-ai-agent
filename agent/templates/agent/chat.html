@@ -25,6 +25,10 @@
 
     <!-- Fonts: Comfortaa for Instagram Aesthetic -->
     <link href="https://fonts.googleapis.com/css2?family=Comfortaa:wght@700&family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@600;700;800&display=swap" rel="stylesheet">
+
+    <!-- Markdown Parser -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Plus Jakarta Sans', sans-serif; transition: background-color 0.25s, color 0.25s, border-color 0.25s; }
 
@@ -353,9 +357,26 @@
             font-weight: 500;
         }
 
-        .msg { padding: 14px 18px; border-radius: 16px; font-size: 15px; line-height: 1.6; word-break: break-word; white-space: pre-wrap; }
-        .msg-wrapper.user .msg { background: var(--msg-user-bg); color: var(--msg-user-text); border-bottom-right-radius: 4px; }
+        .msg { padding: 14px 18px; border-radius: 16px; font-size: 15px; line-height: 1.6; word-break: break-word; }
+        .msg-wrapper.user .msg { background: var(--msg-user-bg); color: var(--msg-user-text); border-bottom-right-radius: 4px; white-space: pre-wrap; }
         .msg-wrapper.assistant .msg { background: var(--card-bg); border: 1px solid var(--border-color); color: var(--text-main); border-bottom-left-radius: 4px; }
+
+        /* MARKDOWN & CLICKABLE LINKS STYLING */
+        .msg a {
+            color: #6366F1;
+            font-weight: 700;
+            text-decoration: underline;
+            word-break: break-all;
+        }
+        .msg a:hover {
+            color: #4F46E5;
+        }
+        .msg p { margin-bottom: 8px; }
+        .msg p:last-child { margin-bottom: 0; }
+        .msg ul, .msg ol { margin-left: 20px; margin-bottom: 8px; }
+        .msg li { margin-bottom: 4px; }
+        .msg code { background: rgba(99,102,241,0.1); padding: 2px 6px; border-radius: 6px; font-size: 13px; font-family: monospace; }
+        .msg pre { background: rgba(0,0,0,0.2); padding: 12px; border-radius: 10px; overflow-x: auto; margin-bottom: 8px; }
 
         .limit-banner {
             background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); color: #EF4444;
@@ -634,6 +655,16 @@
 <script>
     const IS_AUTHENTICATED = {% if is_authenticated %}true{% else %}false{% endif %};
     let currentConversationId = null;
+
+    // Helper to format assistant markdown and open links in a new tab
+    function renderMarkdown(rawText) {
+        if (!rawText) return '';
+        if (typeof marked !== 'undefined') {
+            const html = marked.parse(rawText);
+            return html.replace(/<a\s+href=/g, '<a target="_blank" rel="noopener noreferrer" href=');
+        }
+        return rawText;
+    }
 
     function getPinnedChats() {
         try {
@@ -1025,6 +1056,9 @@
 
                         const msgDiv = document.createElement('div');
                         msgDiv.className = `msg-wrapper ${role}`;
+
+                        const formattedBody = role === 'assistant' ? renderMarkdown(textContent) : textContent;
+
                         msgDiv.innerHTML = `
                             <div class="msg-actions">
                                 <span class="msg-timestamp">${timeStr}</span>
@@ -1042,7 +1076,7 @@
                                     </svg>
                                 </button>
                             </div>
-                            <div class="msg">${textContent}</div>
+                            <div class="msg">${formattedBody}</div>
                         `;
                         list.appendChild(msgDiv);
                     });
@@ -1175,6 +1209,9 @@
             const aiTime = getCurrentTimeString();
             const aiDiv = document.createElement('div');
             aiDiv.className = 'msg-wrapper assistant';
+
+            const renderedResponse = renderMarkdown(data.reply || 'No response returned.');
+
             aiDiv.innerHTML = `
                 <div class="msg-actions">
                     <span class="msg-timestamp">${aiTime}</span>
@@ -1185,7 +1222,7 @@
                         </svg>
                     </button>
                 </div>
-                <div class="msg">${data.reply || 'No response returned.'}</div>
+                <div class="msg">${renderedResponse}</div>
             `;
             list.appendChild(aiDiv);
             chatContainer.scrollTop = chatContainer.scrollHeight;
