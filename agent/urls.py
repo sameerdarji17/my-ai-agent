@@ -12,4 +12,8 @@ urlpatterns = [
     # Google Auth Endpoints
     path("auth/google/", views.google_auth_api, name="google-auth-api"),
     path("google-auth/", views.google_auth_api, name="google-auth-fallback"),
+
+    # Live Email Diagnostic Endpoints
+    path("test-welcome/", views.test_welcome_view, name="test-welcome"),
+    path("test-email/", views.test_email_view, name="test-email"),
 ]
