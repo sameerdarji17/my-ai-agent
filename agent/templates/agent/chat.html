@@ -100,7 +100,6 @@
 
         .sidebar-header { padding: 16px 18px; display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; }
 
-        /* INSTAGRAM SANS STYLE LOGO TEXT */
         .brand {
             font-family: 'Comfortaa', cursive, sans-serif;
             font-size: 20px;
@@ -119,7 +118,6 @@
 
         .sidebar-scroll { flex: 1; overflow-y: auto; padding: 0 8px; display: flex; flex-direction: column; gap: 4px; min-height: 0; }
 
-        /* CHAT HISTORY ROW & DROPDOWN */
         .history-row {
             display: flex;
             align-items: center;
@@ -158,7 +156,6 @@
             white-space: nowrap;
         }
 
-        /* 3-DOTS BUTTON */
         .btn-three-dots {
             background: transparent;
             border: none;
@@ -185,7 +182,6 @@
             color: var(--text-main);
         }
 
-        /* POPUP DROPDOWN MENU */
         .history-dropdown-menu {
             position: absolute;
             right: 8px;
@@ -221,7 +217,6 @@
         .dropdown-item:hover { background: rgba(99, 102, 241, 0.12); color: #6366F1; }
         .dropdown-item.del-item:hover { background: rgba(239, 68, 68, 0.12); color: #EF4444; }
 
-        /* FIXED SIDEBAR FOOTER SPACING */
         .sidebar-footer {
             padding: 10px 14px;
             border-top: 1px solid var(--border-color);
@@ -283,7 +278,6 @@
         }
         .upgrade-link { color: #6366F1; text-decoration: none; font-weight: 700; cursor: pointer; padding: 5px 12px; background: rgba(99,102,241,0.1); border-radius: 8px; }
 
-        /* ABOUT ME BUTTON IN TOP RIGHT */
         .btn-about-me {
             display: inline-flex;
             align-items: center;
@@ -309,11 +303,12 @@
         .welcome-title { font-family: 'Space Grotesk', sans-serif; font-size: 36px; font-weight: 700; color: var(--text-main); }
         .welcome-subtitle { font-size: 16px; color: var(--text-muted); min-height: 28px; font-weight: 500; }
 
-        .messages-list { width: 100%; max-width: 760px; display: flex; flex-direction: column; gap: 20px; }
+        .messages-list { width: 100%; max-width: 760px; display: flex; flex-direction: column; gap: 16px; }
 
-        .msg-wrapper { display: flex; flex-direction: column; position: relative; max-width: 85%; }
-        .msg-wrapper.user { align-self: flex-end; align-items: flex-end; }
-        .msg-wrapper.assistant { align-self: flex-start; align-items: flex-start; }
+        /* FIXED BUBBLE DIMENSIONS & FIT-CONTENT */
+        .msg-wrapper { display: flex; flex-direction: column; position: relative; max-width: 82%; width: fit-content; }
+        .msg-wrapper.user { align-self: flex-end; align-items: flex-end; margin-left: auto; }
+        .msg-wrapper.assistant { align-self: flex-start; align-items: flex-start; margin-right: auto; }
 
         .msg-actions {
             display: none;
@@ -330,7 +325,6 @@
         }
         .msg-wrapper.user .msg-actions { right: 8px; }
         .msg-wrapper.assistant .msg-actions { left: 8px; }
-
         .msg-wrapper:hover .msg-actions { display: inline-flex; }
 
         .action-icon-btn {
@@ -357,31 +351,44 @@
             font-weight: 500;
         }
 
-        .msg { padding: 14px 18px; border-radius: 16px; font-size: 15px; line-height: 1.6; word-break: break-word; }
-        .msg-wrapper.user .msg { background: var(--msg-user-bg); color: var(--msg-user-text); border-bottom-right-radius: 4px; white-space: pre-wrap; }
-        .msg-wrapper.assistant .msg { background: var(--card-bg); border: 1px solid var(--border-color); color: var(--text-main); border-bottom-left-radius: 4px; }
+        .msg {
+            padding: 10px 16px;
+            border-radius: 18px;
+            font-size: 14.5px;
+            line-height: 1.5;
+            word-break: break-word;
+            width: fit-content;
+            display: flex;
+            flex-direction: column;
+        }
+        .msg-wrapper.user .msg {
+            background: var(--msg-user-bg);
+            color: var(--msg-user-text);
+            border-bottom-right-radius: 4px;
+            white-space: pre-wrap;
+            text-align: left;
+        }
+        .msg-wrapper.assistant .msg {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            color: var(--text-main);
+            border-bottom-left-radius: 4px;
+        }
 
-        /* USER MSG ATTACHED IMAGE */
+        /* CLEAN USER ATTACHED IMAGE THUMBNAIL */
         .user-attached-image {
-            max-width: 260px;
-            max-height: 260px;
-            border-radius: 12px;
-            margin-bottom: 8px;
+            max-width: 180px;
+            max-height: 180px;
+            border-radius: 10px;
+            margin-bottom: 6px;
             display: block;
             object-fit: cover;
-            border: 1px solid rgba(0,0,0,0.1);
+            border: 1px solid rgba(0,0,0,0.12);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
         }
 
-        /* MARKDOWN & CLICKABLE LINKS STYLING */
-        .msg a {
-            color: #6366F1;
-            font-weight: 700;
-            text-decoration: underline;
-            word-break: break-all;
-        }
-        .msg a:hover {
-            color: #4F46E5;
-        }
+        .msg a { color: #6366F1; font-weight: 700; text-decoration: underline; word-break: break-all; }
+        .msg a:hover { color: #4F46E5; }
         .msg p { margin-bottom: 8px; }
         .msg p:last-child { margin-bottom: 0; }
         .msg ul, .msg ol { margin-left: 20px; margin-bottom: 8px; }
@@ -426,7 +433,6 @@
         .btn-send-icon { background: #6366F1; color: #FFFFFF; border: none; width: 38px; height: 38px; border-radius: 12px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: transform 0.2s; }
         .btn-send-icon:hover { transform: scale(1.05); }
 
-        /* BOTTOM COPYRIGHT FOOTER */
         .chat-bottom-copyright {
             font-size: 11.5px;
             color: var(--text-muted);
@@ -534,7 +540,6 @@
             {% endif %}
         </div>
 
-        <!-- ABOUT ME BUTTON (TOP RIGHT) -->
         <div>
             <button class="btn-about-me" onclick="openAboutModal()">
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
@@ -583,9 +588,8 @@
                 <button class="btn-send-icon" id="btnSend" onclick="sendMessage()"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg></button>
             </div>
         </div>
-        <!-- COPYRIGHT FOOTER IN MAIN CHAT -->
         <div class="chat-bottom-copyright">
-            © 2026 SD AGENT • Developed by Sameer Darji
+            SD AGENT is AI and can make mistakes. • © 2026 SD AGENT • Developed by Sameer Darji
         </div>
     </div>
 </main>
@@ -846,7 +850,7 @@
         text = text.replace(/^\[Attached:[^\]]+\]\n?/, '');
 
         const input = document.getElementById('userInput');
-        input.value = text;
+        input.value = text.trim();
         input.focus();
         input.style.height = 'auto';
         input.style.height = (input.scrollHeight) + 'px';
@@ -1130,11 +1134,22 @@
         const imgPreviewToSend = attachedImageDataUrl;
         const currentTime = getCurrentTimeString();
 
-        // Construct User bubble UI
+        // User bubble creation
         const userDiv = document.createElement('div');
         userDiv.className = 'msg-wrapper user';
 
-        let userInnerHtml = `
+        let innerContent = '';
+        if (imgPreviewToSend) {
+            innerContent += `<img src="${imgPreviewToSend}" class="user-attached-image">`;
+        } else if (fileToSend) {
+            innerContent += `<div style="font-weight:600; font-size:13px; margin-bottom:4px;">📄 ${fileToSend.name}</div>`;
+        }
+
+        if (text) {
+            innerContent += `<span>${text}</span>`;
+        }
+
+        userDiv.innerHTML = `
             <div class="msg-actions">
                 <span class="msg-timestamp">${currentTime}</span>
                 <button class="action-icon-btn" title="Edit message" onclick="editMessage(this)">
@@ -1150,21 +1165,8 @@
                     </svg>
                 </button>
             </div>
-            <div class="msg">
+            <div class="msg">${innerContent}</div>
         `;
-
-        if (imgPreviewToSend) {
-            userInnerHtml += `<img src="${imgPreviewToSend}" class="user-attached-image">`;
-        } else if (fileToSend) {
-            userInnerHtml += `<div style="font-weight:600; font-size:13px; margin-bottom:4px;">📄 ${fileToSend.name}</div>`;
-        }
-
-        if (text) {
-            userInnerHtml += `<div>${text}</div>`;
-        }
-        userInnerHtml += `</div>`;
-
-        userDiv.innerHTML = userInnerHtml;
         list.appendChild(userDiv);
 
         input.value = '';
@@ -1191,12 +1193,11 @@
         const chatContainer = document.getElementById('chatContainer');
         chatContainer.scrollTop = chatContainer.scrollHeight;
 
-        // Use FormData to support image uploads
+        // Form-data request handling
         const formData = new FormData();
         if (text) formData.append('message', text);
         if (currentConversationId) formData.append('conversation_id', currentConversationId);
         if (fileToSend) {
-            // Check if image or file
             if (fileToSend.type.startsWith('image/')) {
                 formData.append('image', fileToSend);
             } else {
