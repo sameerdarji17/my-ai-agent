@@ -21,3 +21,4 @@ psycopg[c]
 psycopg2-binary>=2.9.9
 timezonefinder>=6.5.3
 google-generativeai
+pillow
