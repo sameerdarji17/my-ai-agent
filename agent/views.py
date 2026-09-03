@@ -15,7 +15,7 @@ from django.views.decorators.csrf import csrf_exempt
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
-from rest_framework.parsers import MultiPartParser
+from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 
 from .models import Conversation, Message
 from .orchestrator import AgentOrchestrator
@@ -38,7 +38,7 @@ def send_welcome_email(user_email, user_name="Explorer"):
             print("[WARN] BREVO_API_KEY is missing, skipping email.")
             return
 
-        site_url = getattr(settings, "SITE_BASE_URL", "https://sd-agent.up.railway.app")
+        site_url = getattr(settings, "SITE_BASE_URL", "https://sd-agent.onrender.com")
 
         html_content = f"""
         <!DOCTYPE html>
@@ -117,7 +117,7 @@ def test_email_view(request):
     sender_email = os.getenv("SENDER_EMAIL", "sameerdarji56@gmail.com").strip()
 
     if not api_key:
-        return HttpResponse("<div style='font-family:sans-serif; padding:24px;'><h2 style='color:orange;'>⚠️ BREVO_API_KEY Missing</h2><p>Please add BREVO_API_KEY in Railway Variables.</p></div>")
+        return HttpResponse("<div style='font-family:sans-serif; padding:24px;'><h2 style='color:orange;'>⚠️ BREVO_API_KEY Missing</h2><p>Please add BREVO_API_KEY in Render Environment Variables.</p></div>")
 
     payload = {
         "sender": {"name": "SD AGENT", "email": sender_email},
@@ -339,12 +339,18 @@ def verify_email_view(request, uidb64, token):
 
 
 class AgentChatView(APIView):
-    """POST /api/agent/chat/"""
+    """POST /api/agent/chat/ (Supports text + image uploads)"""
+    parser_classes = [MultiPartParser, FormParser, JSONParser]
 
     def post(self, request):
-        serializer = ChatRequestSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        data = serializer.validated_data
+        user_message = request.data.get("message", "").strip()
+        uploaded_image = request.FILES.get("image")
+        conv_id = request.data.get("conversation_id")
+        style = request.data.get("style", "normal")
+
+        # Either a message or an image must be provided
+        if not user_message and not uploaded_image:
+            return Response({"error": "Please provide a message or an image."}, status=status.HTTP_400_BAD_REQUEST)
 
         is_premium = False
 
@@ -395,20 +401,20 @@ class AgentChatView(APIView):
                     status=status.HTTP_403_FORBIDDEN,
                 )
 
-        conv_id = data.get("conversation_id")
         if conv_id:
             conversation = get_object_or_404(Conversation, id=conv_id)
         else:
             owner = request.user if request.user.is_authenticated else None
             session_key = "" if request.user.is_authenticated else (request.session.session_key or "")
+            title_text = user_message[:60] if user_message else "📷 Image Chat"
             conversation = Conversation.objects.create(
-                title=data["message"][:60],
+                title=title_text,
                 owner=owner,
                 session_key=session_key,
             )
 
-        agent = AgentOrchestrator(conversation, is_premium=is_premium, style=data.get("style", "normal"))
-        result = agent.run(data["message"])
+        agent = AgentOrchestrator(conversation, is_premium=is_premium, style=style)
+        result = agent.run(user_message, image_file=uploaded_image)
 
         if not request.user.is_authenticated:
             request.session["anon_msg_count"] = request.session.get("anon_msg_count", 0) + 1

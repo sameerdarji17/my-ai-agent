@@ -3,6 +3,7 @@ import re
 import time
 import json
 import logging
+from PIL import Image
 from django.conf import settings
 from .models import Message
 
@@ -25,10 +26,11 @@ IDENTITY & INTRO RULES:
 3. Strict Restriction: NEVER mention or identify as Google, Gemini, OpenAI, ChatGPT, or Claude.
 
 CORE CAPABILITIES:
-1. Astrology & Kundali Analysis: You excel at Vedic astrology, Kundali matching, Graha-Dasha analysis, and Rashi readings with structured insights.
-2. Coding & Problem Solving: Provide clean, accurate, and step-by-step logic for programming, tech, and academic tasks.
-3. Language: Seamlessly reply in Hindi, Hinglish, English, or Gujarati matching the user's input.
-4. Clean Output: Never output raw function markers, tags, or JSON code in user chats.
+1. Vision & Image Understanding: You can deeply analyze images, documents, photos, diagrams, and screenshots provided by the user. Describe, explain, or extract data accurately from images.
+2. Astrology & Kundali Analysis: You excel at Vedic astrology, Kundali matching, Graha-Dasha analysis, and Rashi readings with structured insights.
+3. Coding & Problem Solving: Provide clean, accurate, and step-by-step logic for programming, tech, and academic tasks.
+4. Language: Seamlessly reply in Hindi, Hinglish, English, or Gujarati matching the user's input.
+5. Clean Output: Never output raw function markers, tags, or JSON code in user chats.
 
 SHOPPING, PRODUCTS & E-COMMERCE RULES:
 1. NEVER say "I cannot browse the internet", "I cannot give links", or "I cannot do live shopping".
@@ -65,15 +67,14 @@ class AgentOrchestrator:
         return history
 
     def _get_active_model_name(self):
-        """Prefers 1.5-flash for generous 1500 RPD free quota over low quota 2.5-flash."""
+        """Prefers 1.5-flash / 2.0-flash which natively support image & multimodal analysis."""
         try:
             available_models = [
                 m.name for m in genai.list_models()
                 if 'generateContent' in m.supported_generation_methods
             ]
 
-            # 1.5-flash provides the best rate limits for free tier
-            for target in ["gemini-1.5-flash", "gemini-2.0-flash", "gemini-1.5-pro", "gemini-2.5-flash"]:
+            for target in ["gemini-1.5-flash", "gemini-2.0-flash", "gemini-1.5-pro"]:
                 for full_name in available_models:
                     if target in full_name:
                         return full_name
@@ -85,11 +86,16 @@ class AgentOrchestrator:
 
         return "models/gemini-1.5-flash"
 
-    def run(self, user_message):
+    def run(self, user_message, image_file=None):
+        # Record user message in DB
+        display_content = user_message or ""
+        if image_file and not display_content:
+            display_content = "📷 [Uploaded Image]"
+
         Message.objects.create(
             conversation=self.conversation,
             role="user",
-            content=user_message
+            content=display_content
         )
 
         if not GENAI_AVAILABLE:
@@ -98,12 +104,20 @@ class AgentOrchestrator:
             return {"reply": reply_text, "tool_trace": []}
 
         if not self.api_keys:
-            reply_text = "Error: GEMINI_API_KEY is not configured in Railway environment variables."
+            reply_text = "Error: GEMINI_API_KEY is not configured in environment variables."
             Message.objects.create(conversation=self.conversation, role="assistant", content=reply_text)
             return {"reply": reply_text, "tool_trace": []}
 
         reply_text = ""
         last_error = None
+
+        # Load image with PIL if provided
+        pil_image = None
+        if image_file:
+            try:
+                pil_image = Image.open(image_file)
+            except Exception as img_err:
+                logger.error(f"Error reading uploaded image: {img_err}")
 
         # Rotate across available API keys on rate-limit / quota errors
         for key_index, current_key in enumerate(self.api_keys):
@@ -116,10 +130,23 @@ class AgentOrchestrator:
                     system_instruction=SYSTEM_INSTRUCTIONS
                 )
 
-                history = self._get_history()[:-1]
-                chat = model.start_chat(history=history)
+                # Multimodal prompt construction
+                prompt_parts = []
+                if pil_image:
+                    prompt_parts.append(pil_image)
+                if user_message:
+                    prompt_parts.append(user_message)
+                elif pil_image:
+                    prompt_parts.append("Explain or describe what is in this image in detail.")
 
-                response = chat.send_message(user_message)
+                # If image is attached, generate content directly; otherwise use chat session
+                if pil_image:
+                    response = model.generate_content(prompt_parts)
+                else:
+                    history = self._get_history()[:-1]
+                    chat = model.start_chat(history=history)
+                    response = chat.send_message(user_message)
+
                 reply_text = response.text or ""
 
                 if "<function" in reply_text:
@@ -134,7 +161,6 @@ class AgentOrchestrator:
                 err_msg = str(e)
                 logger.warning(f"API Key [{key_index + 1}/{len(self.api_keys)}] encountered error: {err_msg}")
                 last_error = e
-                # Check for 429 rate limit or quota issues and retry with next key
                 if "429" in err_msg or "quota" in err_msg.lower() or "resourceexhausted" in err_msg.lower():
                     time.sleep(0.5)
                     continue

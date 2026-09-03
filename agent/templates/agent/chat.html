@@ -361,6 +361,17 @@
         .msg-wrapper.user .msg { background: var(--msg-user-bg); color: var(--msg-user-text); border-bottom-right-radius: 4px; white-space: pre-wrap; }
         .msg-wrapper.assistant .msg { background: var(--card-bg); border: 1px solid var(--border-color); color: var(--text-main); border-bottom-left-radius: 4px; }
 
+        /* USER MSG ATTACHED IMAGE */
+        .user-attached-image {
+            max-width: 260px;
+            max-height: 260px;
+            border-radius: 12px;
+            margin-bottom: 8px;
+            display: block;
+            object-fit: cover;
+            border: 1px solid rgba(0,0,0,0.1);
+        }
+
         /* MARKDOWN & CLICKABLE LINKS STYLING */
         .msg a {
             color: #6366F1;
@@ -398,9 +409,10 @@
         .input-box { width: 100%; background: var(--input-bg); border: 1px solid var(--border-color); border-radius: 22px; padding: 14px 18px; box-shadow: 0 4px 20px rgba(0,0,0,0.04); display: flex; flex-direction: column; gap: 10px; }
 
         .attachment-preview-bar { display: none; gap: 8px; align-items: center; flex-wrap: wrap; padding-bottom: 4px; }
-        .attachment-chip { display: flex; align-items: center; gap: 6px; background: rgba(99,102,241,0.1); border: 1px solid #6366F1; color: var(--text-main); padding: 4px 10px; border-radius: 8px; font-size: 12px; font-weight: 600; }
-        .attachment-chip img { width: 20px; height: 20px; border-radius: 4px; object-fit: cover; }
-        .btn-remove-attachment { background: none; border: none; cursor: pointer; color: #EF4444; font-size: 14px; line-height: 1; }
+        .attachment-chip { display: flex; align-items: center; gap: 8px; background: rgba(99,102,241,0.1); border: 1px solid #6366F1; color: var(--text-main); padding: 5px 12px; border-radius: 10px; font-size: 12.5px; font-weight: 600; }
+        .attachment-chip img { width: 32px; height: 32px; border-radius: 6px; object-fit: cover; border: 1px solid rgba(0,0,0,0.1); }
+        .btn-remove-attachment { background: none; border: none; cursor: pointer; color: #EF4444; font-size: 15px; line-height: 1; padding: 2px 4px; border-radius: 4px; }
+        .btn-remove-attachment:hover { background: rgba(239, 68, 68, 0.15); }
 
         .chat-input { width: 100%; border: none; outline: none; font-size: 15px; background: transparent; resize: none; min-height: 44px; max-height: 140px; color: var(--text-main); }
         .input-bottom-row { display: flex; align-items: center; justify-content: space-between; }
@@ -550,7 +562,7 @@
         <div class="input-box">
             <div class="attachment-preview-bar" id="attachmentPreviewBar"></div>
 
-            <textarea class="chat-input" id="userInput" placeholder="Ask SD AGENT anything..." rows="1" onkeydown="handleKeyDown(event)"></textarea>
+            <textarea class="chat-input" id="userInput" placeholder="Ask SD AGENT anything, or attach an image..." rows="1" onkeydown="handleKeyDown(event)"></textarea>
 
             <div class="input-bottom-row">
                 <div class="left-actions">
@@ -583,7 +595,6 @@
     <div class="modal-card" style="max-width: 520px; text-align: center;">
         <button onclick="closeAboutModal()" style="position:absolute; top:18px; right:20px; background:none; border:none; cursor:pointer; font-size:20px; color:var(--text-main);">✕</button>
 
-        <!-- Header with Logo & Instagram Font -->
         <div style="display: flex; align-items: center; justify-content: center; gap: 10px; margin-bottom: 16px; margin-top: 6px;">
             <div class="logo-box" style="width: 38px; height: 38px;">
                 <svg width="22" height="22" viewBox="0 0 100 100" fill="none">
@@ -646,7 +657,7 @@
         <div style="margin-top:20px; padding:20px; border:2px solid #6366F1; border-radius:18px; background:rgba(99,102,241,0.05);">
             <h3 style="color:#6366F1; font-size:20px;">SD AGENT Pro</h3>
             <div style="font-size:26px; font-weight:700; margin:10px 0;">₹109 <span style="font-size:12px;">/ 3 Months</span></div>
-            <p style="font-size:14px; line-height:1.8;">✓ Generative AI Image Creation<br>✓ Unlimited Search Mode</p>
+            <p style="font-size:14px; line-height:1.8;">✓ Vision & Image Analysis<br>✓ Generative AI Image Creation<br>✓ Unlimited Search Mode</p>
             <button onclick="alert('Payment Gateway Connecting!')" style="width:100%; margin-top:16px; padding:12px; background:#6366F1; color:#FFF; border:none; border-radius:12px; font-weight:700; cursor:pointer;">Get 3 Months for ₹109</button>
         </div>
     </div>
@@ -656,7 +667,6 @@
     const IS_AUTHENTICATED = {% if is_authenticated %}true{% else %}false{% endif %};
     let currentConversationId = null;
 
-    // Helper to format assistant markdown and open links in a new tab
     function renderMarkdown(rawText) {
         if (!rawText) return '';
         if (typeof marked !== 'undefined') {
@@ -722,7 +732,6 @@
     function openSettingsModal() { document.getElementById('settingsModal').style.display = 'flex'; }
     function closeSettingsModal() { document.getElementById('settingsModal').style.display = 'none'; }
 
-    /* GLOBAL ROBUST EVENT DELEGATION */
     document.addEventListener('click', function(e) {
         if (e.target.closest('#btnNewChat')) {
             startNewChat();
@@ -899,11 +908,13 @@
     }
 
     let attachedFile = null;
+    let attachedImageDataUrl = null;
 
     function handleFileSelect(e) {
         if (e.target.files && e.target.files[0]) {
             attachedFile = e.target.files[0];
-            showAttachmentBadge(attachedFile.name, '📄 File Attached');
+            attachedImageDataUrl = null;
+            showAttachmentBadge(attachedFile.name, '📄 Document Attached');
         }
     }
 
@@ -912,7 +923,8 @@
             attachedFile = e.target.files[0];
             const reader = new FileReader();
             reader.onload = (event) => {
-                showAttachmentBadge(attachedFile.name, '🖼️ Image Attached', event.target.result);
+                attachedImageDataUrl = event.target.result;
+                showAttachmentBadge(attachedFile.name, '🖼️ Image Attached', attachedImageDataUrl);
             };
             reader.readAsDataURL(attachedFile);
         }
@@ -932,6 +944,7 @@
 
     function removeAttachment() {
         attachedFile = null;
+        attachedImageDataUrl = null;
         document.getElementById('fileUploadInput').value = '';
         document.getElementById('imageUploadInput').value = '';
         const previewBar = document.getElementById('attachmentPreviewBar');
@@ -941,7 +954,7 @@
 
     const phrases = [
         "How can I help you today?",
-        "Let's build something extraordinary.",
+        "Upload any image or document for instant analysis.",
         "Need help with code, ideas, or analysis?",
         "What's on your mind today?"
     ];
@@ -1113,16 +1126,15 @@
         document.getElementById('welcomeBox').style.display = 'none';
         const list = document.getElementById('messagesList');
 
-        let displayContent = text;
-        if (attachedFile) {
-            displayContent = `[Attached: ${attachedFile.name}]\n` + text;
-        }
-
+        const fileToSend = attachedFile;
+        const imgPreviewToSend = attachedImageDataUrl;
         const currentTime = getCurrentTimeString();
 
+        // Construct User bubble UI
         const userDiv = document.createElement('div');
         userDiv.className = 'msg-wrapper user';
-        userDiv.innerHTML = `
+
+        let userInnerHtml = `
             <div class="msg-actions">
                 <span class="msg-timestamp">${currentTime}</span>
                 <button class="action-icon-btn" title="Edit message" onclick="editMessage(this)">
@@ -1138,8 +1150,21 @@
                     </svg>
                 </button>
             </div>
-            <div class="msg">${displayContent}</div>
+            <div class="msg">
         `;
+
+        if (imgPreviewToSend) {
+            userInnerHtml += `<img src="${imgPreviewToSend}" class="user-attached-image">`;
+        } else if (fileToSend) {
+            userInnerHtml += `<div style="font-weight:600; font-size:13px; margin-bottom:4px;">📄 ${fileToSend.name}</div>`;
+        }
+
+        if (text) {
+            userInnerHtml += `<div>${text}</div>`;
+        }
+        userInnerHtml += `</div>`;
+
+        userDiv.innerHTML = userInnerHtml;
         list.appendChild(userDiv);
 
         input.value = '';
@@ -1166,13 +1191,23 @@
         const chatContainer = document.getElementById('chatContainer');
         chatContainer.scrollTop = chatContainer.scrollHeight;
 
+        // Use FormData to support image uploads
+        const formData = new FormData();
+        if (text) formData.append('message', text);
+        if (currentConversationId) formData.append('conversation_id', currentConversationId);
+        if (fileToSend) {
+            // Check if image or file
+            if (fileToSend.type.startsWith('image/')) {
+                formData.append('image', fileToSend);
+            } else {
+                formData.append('file', fileToSend);
+            }
+        }
+
         fetch('/api/agent/chat/', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token }}' },
-            body: JSON.stringify({
-                message: displayContent,
-                conversation_id: currentConversationId
-            })
+            headers: { 'X-CSRFToken': '{{ csrf_token }}' },
+            body: formData
         })
         .then(async res => {
             const data = await res.json();
