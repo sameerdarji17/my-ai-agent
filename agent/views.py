@@ -28,15 +28,18 @@ FREE_WINDOW_HOURS = 5
 
 
 def send_welcome_email(user_email, user_name="Explorer"):
-    """Sends a premium HTML welcome email via Brevo HTTP API directly (without thread termination)."""
+    """Sends a premium HTML welcome email via Brevo HTTP API with explicit error logging."""
     api_key = os.getenv("BREVO_API_KEY", "").strip()
     sender_email = os.getenv("SENDER_EMAIL", "sameerdarji56@gmail.com").strip()
+
+    print(f"[EMAIL TRIGGER] Attempting to send welcome email to {user_email} (Name: {user_name})")
+
     if not api_key:
-        print("[WARN] BREVO_API_KEY is missing, skipping email.")
-        return
+        print("[EMAIL ERROR] BREVO_API_KEY is missing in environment variables.")
+        return False, "BREVO_API_KEY is missing"
 
     site_url = getattr(settings, "SITE_BASE_URL", "https://sd-agent.onrender.com")
-    clean_name = user_name if user_name else "Explorer"
+    clean_name = str(user_name).strip() if user_name else "Explorer"
 
     html_content = f"""
     <!DOCTYPE html>
@@ -99,11 +102,31 @@ def send_welcome_email(user_email, user_name="Explorer"):
             },
             method="POST"
         )
-        with urllib.request.urlopen(req, timeout=10) as response:
+        with urllib.request.urlopen(req, timeout=12) as response:
             res_body = response.read().decode("utf-8")
-            print(f"[SUCCESS] Brevo email sent to {user_email}: {res_body}")
+            print(f"[EMAIL SUCCESS] Brevo email successfully sent to {user_email}: {res_body}")
+            return True, res_body
+    except urllib.error.HTTPError as e:
+        err_msg = e.read().decode("utf-8")
+        print(f"[EMAIL HTTP ERROR] Failed to send email to {user_email} (Code {e.code}): {err_msg}")
+        return False, err_msg
     except Exception as e:
-        print(f"[ERROR] Failed to send email via Brevo to {user_email}: {e}")
+        print(f"[EMAIL EXCEPTION] Failed to send email to {user_email}: {e}")
+        return False, str(e)
+
+
+def test_welcome_view(request):
+    """Direct live tester that executes the EXACT send_welcome_email function."""
+    target_email = request.GET.get("email", "sameerdarji56@gmail.com").strip()
+    target_name = request.GET.get("name", "Sameer").strip()
+
+    success, detail = send_welcome_email(target_email, target_name)
+    if success:
+        return HttpResponse(
+            f"<div style='font-family:sans-serif; padding:24px;'><h2 style='color:green;'>✅ Welcome Email Sent!</h2><p>Delivered to <strong>{target_email}</strong></p><pre>{detail}</pre></div>")
+    else:
+        return HttpResponse(
+            f"<div style='font-family:sans-serif; padding:24px;'><h2 style='color:red;'>❌ Failed to Send</h2><p>Error details:</p><pre>{detail}</pre></div>")
 
 
 def test_email_view(request):
@@ -113,7 +136,8 @@ def test_email_view(request):
     sender_email = os.getenv("SENDER_EMAIL", "sameerdarji56@gmail.com").strip()
 
     if not api_key:
-        return HttpResponse("<div style='font-family:sans-serif; padding:24px;'><h2 style='color:orange;'>⚠️ BREVO_API_KEY Missing</h2><p>Please add BREVO_API_KEY in Render Environment Variables.</p></div>")
+        return HttpResponse(
+            "<div style='font-family:sans-serif; padding:24px;'><h2 style='color:orange;'>⚠️ BREVO_API_KEY Missing</h2><p>Please add BREVO_API_KEY in Render Environment Variables.</p></div>")
 
     payload = {
         "sender": {"name": "SD AGENT", "email": sender_email},
@@ -135,9 +159,11 @@ def test_email_view(request):
         )
         with urllib.request.urlopen(req, timeout=10) as response:
             res_body = response.read().decode("utf-8")
-            return HttpResponse(f"<div style='font-family: sans-serif; padding: 24px;'><h2 style='color: green;'>✅ SUCCESS!</h2><p>Test email successfully dispatched to <strong>{target_email}</strong>.<br>Response: <code>{res_body}</code></p></div>")
+            return HttpResponse(
+                f"<div style='font-family: sans-serif; padding: 24px;'><h2 style='color: green;'>✅ SUCCESS!</h2><p>Test email successfully dispatched to <strong>{target_email}</strong>.<br>Response: <code>{res_body}</code></p></div>")
     except Exception as e:
-        return HttpResponse(f"<div style='font-family: sans-serif; padding: 24px;'><h2 style='color: red;'>❌ ERROR: {type(e).__name__}</h2><pre style='background:#f4f4f5; padding:16px; border-radius:8px; border:1px solid #e4e4e7;'>{str(e)}</pre></div>")
+        return HttpResponse(
+            f"<div style='font-family: sans-serif; padding: 24px;'><h2 style='color: red;'>❌ ERROR: {type(e).__name__}</h2><pre style='background:#f4f4f5; padding:16px; border-radius:8px; border:1px solid #e4e4e7;'>{str(e)}</pre></div>")
 
 
 def chat_page(request):
@@ -248,7 +274,6 @@ def google_auth_api(request):
     auth_login(request, user, backend='django.contrib.auth.backends.ModelBackend')
     request.session.save()
 
-    # Migrate guest / anonymous chats to authenticated user
     if prior_session_key:
         Conversation.objects.filter(session_key=prior_session_key, owner__isnull=True).update(owner=user)
 
@@ -282,7 +307,8 @@ def signup_view(request):
 
                         auth_login(request, user, backend='django.contrib.auth.backends.ModelBackend')
                         if prior_session_key:
-                            Conversation.objects.filter(session_key=prior_session_key, owner__isnull=True).update(owner=user)
+                            Conversation.objects.filter(session_key=prior_session_key, owner__isnull=True).update(
+                                owner=user)
                         return redirect("chat-page")
                     else:
                         error = "Invalid password for this email address."
@@ -305,7 +331,8 @@ def signup_view(request):
 
                     auth_login(request, new_user, backend='django.contrib.auth.backends.ModelBackend')
                     if prior_session_key:
-                        Conversation.objects.filter(session_key=prior_session_key, owner__isnull=True).update(owner=new_user)
+                        Conversation.objects.filter(session_key=prior_session_key, owner__isnull=True).update(
+                            owner=new_user)
                     return redirect("chat-page")
             except Exception as e:
                 error = f"Authentication error: {str(e)}"
