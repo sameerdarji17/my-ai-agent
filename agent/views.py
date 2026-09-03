@@ -1,7 +1,6 @@
 import os
 import json
 import uuid
-import threading
 import urllib.request
 import urllib.parse
 import logging
@@ -29,85 +28,82 @@ FREE_WINDOW_HOURS = 5
 
 
 def send_welcome_email(user_email, user_name="Explorer"):
-    """Sends a premium HTML welcome email via Brevo HTTP API ONLY ONCE on new registration."""
+    """Sends a premium HTML welcome email via Brevo HTTP API directly (without thread termination)."""
+    api_key = os.getenv("BREVO_API_KEY", "").strip()
+    sender_email = os.getenv("SENDER_EMAIL", "sameerdarji56@gmail.com").strip()
+    if not api_key:
+        print("[WARN] BREVO_API_KEY is missing, skipping email.")
+        return
 
-    def _send():
-        api_key = os.getenv("BREVO_API_KEY", "").strip()
-        sender_email = os.getenv("SENDER_EMAIL", "sameerdarji56@gmail.com").strip()
-        if not api_key:
-            print("[WARN] BREVO_API_KEY is missing, skipping email.")
-            return
+    site_url = getattr(settings, "SITE_BASE_URL", "https://sd-agent.onrender.com")
+    clean_name = user_name if user_name else "Explorer"
 
-        site_url = getattr(settings, "SITE_BASE_URL", "https://sd-agent.onrender.com")
+    html_content = f"""
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <meta charset="UTF-8">
+        <style>
+            body {{ font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #09090B; color: #FAFAFA; margin: 0; padding: 24px 12px; }}
+            .card {{ max-width: 560px; margin: 0 auto; background-color: #18181B; border: 1px solid #27272A; border-radius: 18px; padding: 36px 30px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }}
+            .brand {{ font-size: 24px; font-weight: 800; color: #8B8EFF; letter-spacing: 0.5px; text-decoration: none; text-align: center; margin-bottom: 20px; }}
+            h1 {{ font-size: 22px; color: #FFFFFF; font-weight: 700; margin-bottom: 12px; }}
+            p {{ font-size: 14px; line-height: 1.6; color: #A1A1AA; margin-bottom: 16px; }}
+            .feature-box {{ background: #121215; border: 1px solid #27272A; border-radius: 12px; padding: 16px; margin: 20px 0; }}
+            .feature-item {{ font-size: 13px; color: #E4E4E7; margin-bottom: 8px; }}
+            .btn {{ display: inline-block; background-color: #6366F1; color: #FFFFFF !important; padding: 13px 28px; border-radius: 12px; font-weight: 700; text-decoration: none; font-size: 14px; margin-top: 10px; }}
+            .footer {{ text-align: center; margin-top: 30px; font-size: 12px; color: #71717A; border-top: 1px solid #27272A; padding-top: 20px; }}
+        </style>
+    </head>
+    <body>
+        <div class="card">
+            <div class="brand">SD AGENT</div>
+            <h1>Welcome aboard, {clean_name}! 👋</h1>
+            <p>We're thrilled to have you! <strong>SD AGENT</strong> is your personal AI workspace built for intelligent coding, real-time research, and deep productivity.</p>
 
-        html_content = f"""
-        <!DOCTYPE html>
-        <html>
-        <head>
-            <meta charset="UTF-8">
-            <style>
-                body {{ font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #09090B; color: #FAFAFA; margin: 0; padding: 24px 12px; }}
-                .card {{ max-width: 560px; margin: 0 auto; background-color: #18181B; border: 1px solid #27272A; border-radius: 18px; padding: 36px 30px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }}
-                .brand {{ font-size: 24px; font-weight: 800; color: #8B8EFF; letter-spacing: 0.5px; text-decoration: none; text-align: center; margin-bottom: 20px; }}
-                h1 {{ font-size: 22px; color: #FFFFFF; font-weight: 700; margin-bottom: 12px; }}
-                p {{ font-size: 14px; line-height: 1.6; color: #A1A1AA; margin-bottom: 16px; }}
-                .feature-box {{ background: #121215; border: 1px solid #27272A; border-radius: 12px; padding: 16px; margin: 20px 0; }}
-                .feature-item {{ font-size: 13px; color: #E4E4E7; margin-bottom: 8px; }}
-                .btn {{ display: inline-block; background-color: #6366F1; color: #FFFFFF !important; padding: 13px 28px; border-radius: 12px; font-weight: 700; text-decoration: none; font-size: 14px; margin-top: 10px; }}
-                .footer {{ text-align: center; margin-top: 30px; font-size: 12px; color: #71717A; border-top: 1px solid #27272A; padding-top: 20px; }}
-            </style>
-        </head>
-        <body>
-            <div class="card">
-                <div class="brand">SD AGENT</div>
-                <h1>Welcome aboard, {user_name}! 👋</h1>
-                <p>We're thrilled to have you! <strong>SD AGENT</strong> is your personal AI workspace built for intelligent coding, real-time research, and deep productivity.</p>
-
-                <div class="feature-box">
-                    <div class="feature-item">⚡ <strong>Free AI Workspace:</strong> Start chatting and experimenting instantly.</div>
-                    <div class="feature-item">🔒 <strong>Persistent History:</strong> Your conversations are securely saved.</div>
-                    <div class="feature-item">🚀 <strong>Pro Upgrade:</strong> Unlock unlimited turns and advanced features anytime.</div>
-                </div>
-
-                <div style="text-align: center; margin: 26px 0;">
-                    <a href="{site_url}" class="btn">Launch SD AGENT ➔</a>
-                </div>
-
-                <p style="font-size: 13px; color: #71717A; text-align: center;">If you didn't create this account, you can safely ignore this email.</p>
-
-                <div class="footer">
-                    &copy; 2026 SD AGENT. All rights reserved.
-                </div>
+            <div class="feature-box">
+                <div class="feature-item">⚡ <strong>Free AI Workspace:</strong> Start chatting and experimenting instantly.</div>
+                <div class="feature-item">🔒 <strong>Persistent History:</strong> Your conversations are securely saved.</div>
+                <div class="feature-item">🚀 <strong>Pro Upgrade:</strong> Unlock unlimited turns and advanced features anytime.</div>
             </div>
-        </body>
-        </html>
-        """
 
-        payload = {
-            "sender": {"name": "SD AGENT", "email": sender_email},
-            "to": [{"email": user_email, "name": user_name}],
-            "subject": "Welcome to SD AGENT 🚀",
-            "htmlContent": html_content
-        }
+            <div style="text-align: center; margin: 26px 0;">
+                <a href="{site_url}" class="btn">Launch SD AGENT ➔</a>
+            </div>
 
-        try:
-            req = urllib.request.Request(
-                "https://api.brevo.com/v3/smtp/email",
-                data=json.dumps(payload).encode("utf-8"),
-                headers={
-                    "accept": "application/json",
-                    "api-key": api_key,
-                    "content-type": "application/json"
-                },
-                method="POST"
-            )
-            with urllib.request.urlopen(req, timeout=10) as response:
-                res_body = response.read().decode("utf-8")
-                print(f"[SUCCESS] Brevo email sent to {user_email}: {res_body}")
-        except Exception as e:
-            print(f"[ERROR] Failed to send email via Brevo to {user_email}: {e}")
+            <p style="font-size: 13px; color: #71717A; text-align: center;">If you didn't create this account, you can safely ignore this email.</p>
 
-    threading.Thread(target=_send, daemon=True).start()
+            <div class="footer">
+                &copy; 2026 SD AGENT. All rights reserved.
+            </div>
+        </div>
+    </body>
+    </html>
+    """
+
+    payload = {
+        "sender": {"name": "SD AGENT", "email": sender_email},
+        "to": [{"email": user_email, "name": clean_name}],
+        "subject": "Welcome to SD AGENT 🚀",
+        "htmlContent": html_content
+    }
+
+    try:
+        req = urllib.request.Request(
+            "https://api.brevo.com/v3/smtp/email",
+            data=json.dumps(payload).encode("utf-8"),
+            headers={
+                "accept": "application/json",
+                "api-key": api_key,
+                "content-type": "application/json"
+            },
+            method="POST"
+        )
+        with urllib.request.urlopen(req, timeout=10) as response:
+            res_body = response.read().decode("utf-8")
+            print(f"[SUCCESS] Brevo email sent to {user_email}: {res_body}")
+    except Exception as e:
+        print(f"[ERROR] Failed to send email via Brevo to {user_email}: {e}")
 
 
 def test_email_view(request):
@@ -348,7 +344,6 @@ class AgentChatView(APIView):
         conv_id = request.data.get("conversation_id")
         style = request.data.get("style", "normal")
 
-        # Either a message or an image must be provided
         if not user_message and not uploaded_image:
             return Response({"error": "Please provide a message or an image."}, status=status.HTTP_400_BAD_REQUEST)
 
