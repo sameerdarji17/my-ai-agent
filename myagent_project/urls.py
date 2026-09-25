@@ -1,6 +1,8 @@
 from django.contrib import admin
 from django.urls import path, include
 from django.http import HttpResponse
+from django.conf import settings
+from django.conf.urls.static import static
 from agent import views as agent_views
 
 urlpatterns = [
@@ -15,6 +17,7 @@ urlpatterns = [
     path("signup/", agent_views.signup_view, name="signup"),
     path("logout/", agent_views.logout_view, name="logout"),
     path("test-email/", agent_views.test_email_view, name="test-email"),
+    path("test-welcome/", agent_views.test_welcome_view, name="test-welcome"),
     path("api/google-auth/", agent_views.google_auth_api, name="google-auth-api"),
     path("verify-email/<str:uidb64>/<str:token>/", agent_views.verify_email_view, name="verify-email"),
     path("api/agent/chat/", agent_views.AgentChatView.as_view(), name="agent-chat"),
@@ -28,3 +31,6 @@ urlpatterns = [
     path("billing/", include("billing.urls")),
     path("accounts/", include("django.contrib.auth.urls")),
 ]
+
+# Media files route (Images persist aur view hone ke liye)
+urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

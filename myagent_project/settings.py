@@ -4,25 +4,22 @@ Django settings for myagent_project.
 
 import os
 from pathlib import Path
-
 import dj_database_url
 from dotenv import load_dotenv
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 load_dotenv(BASE_DIR / ".env")
 
-# Ensure GEMINI_API_KEY is read from environment variables
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
 
 # ---------------------------------------------------------------------------
 # SECURITY
 # ---------------------------------------------------------------------------
 SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY", "dev-only-change-this-in-production")
-DEBUG = os.environ.get("DJANGO_DEBUG", "True") == "True"
+DEBUG = os.environ.get("DJANGO_DEBUG", "False") == "True"
 
 ALLOWED_HOSTS = ["*"]
 
-# Railway Reverse Proxy Header for HTTPS
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 
 CSRF_TRUSTED_ORIGINS = [
@@ -89,14 +86,22 @@ WSGI_APPLICATION = "myagent_project.wsgi.application"
 ASGI_APPLICATION = "myagent_project.asgi.application"
 
 # ---------------------------------------------------------------------------
-# DATABASE
+# DATABASE (Safe Neon + Local SQLite Fallback during Build)
 # ---------------------------------------------------------------------------
 _database_url = os.environ.get("DATABASE_URL", "").strip()
+
 if _database_url:
-    DATABASES = {"default": dj_database_url.parse(_database_url, conn_max_age=600)}
+    if _database_url.startswith("postgres://"):
+        _database_url = _database_url.replace("postgres://", "postgresql://", 1)
+    DATABASES = {
+        "default": dj_database_url.parse(_database_url, conn_max_age=600)
+    }
 else:
     DATABASES = {
-        "default": dj_database_url.parse(f"sqlite:///{BASE_DIR / 'db.sqlite3'}")
+        "default": {
+            "ENGINE": "django.db.backends.sqlite3",
+            "NAME": BASE_DIR / "db.sqlite3",
+        }
     }
 
 AUTH_PASSWORD_VALIDATORS = [
@@ -112,18 +117,19 @@ USE_I18N = True
 USE_TZ = True
 
 # ---------------------------------------------------------------------------
-# STATIC FILES CONFIGURATION (SAFE CHECK)
+# STATIC & MEDIA FILES (FOR PERSISTENT IMAGES & ASSETS)
 # ---------------------------------------------------------------------------
 STATIC_URL = "/static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
 
 static_folder = BASE_DIR / "static"
-if static_folder.exists():
-    STATICFILES_DIRS = [static_folder]
-else:
-    STATICFILES_DIRS = []
-
+STATICFILES_DIRS = [static_folder] if static_folder.exists() else []
 STATICFILES_STORAGE = "whitenoise.storage.CompressedStaticFilesStorage"
+
+# Media Files Configuration (Chat uploaded photos)
+MEDIA_URL = "/media/"
+MEDIA_ROOT = BASE_DIR / "media"
+MEDIA_ROOT.mkdir(exist_ok=True)
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
@@ -196,7 +202,7 @@ DEFAULT_FROM_EMAIL = os.environ.get(
     "DEFAULT_FROM_EMAIL",
     f"SD AGENT <{EMAIL_HOST_USER}>" if EMAIL_HOST_USER else "SD AGENT <support@sdagent.ai>"
 )
-SITE_BASE_URL = os.environ.get("SITE_BASE_URL", "https://sd-agent.up.railway.app")
+SITE_BASE_URL = os.environ.get("SITE_BASE_URL", "https://sd-agent.onrender.com")
 
 # ---------------------------------------------------------------------------
 # AUTH
@@ -219,7 +225,6 @@ SESSION_COOKIE_AGE = 1209600  # 14 Days
 SESSION_EXPIRE_AT_BROWSER_CLOSE = False
 SESSION_SAVE_EVERY_REQUEST = True
 
-# Production Cookie Security
 SESSION_COOKIE_SECURE = not DEBUG
 CSRF_COOKIE_SECURE = not DEBUG
 SESSION_COOKIE_SAMESITE = "Lax"
