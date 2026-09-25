@@ -28,17 +28,19 @@ FREE_WINDOW_HOURS = 5
 
 
 def send_welcome_email(user_email, user_name="Explorer"):
-    """Sends a premium HTML welcome email via Brevo HTTP API with explicit error logging."""
+    """Brevo HTTP API के ज़रिए वेलकम ईमेल भेजता है और बटन लिंक 100% सही रखता है।"""
     api_key = os.getenv("BREVO_API_KEY", "").strip()
     sender_email = os.getenv("SENDER_EMAIL", "sameerdarji56@gmail.com").strip()
 
-    print(f"[EMAIL TRIGGER] Attempting to send welcome email to {user_email} (Name: {user_name})")
+    print(f"[EMAIL TRIGGER] Welcome email bhejne ki koshish: {user_email} (Name: {user_name})")
 
     if not api_key:
-        print("[EMAIL ERROR] BREVO_API_KEY is missing in environment variables.")
+        print("[EMAIL ERROR] BREVO_API_KEY missing hai.")
         return False, "BREVO_API_KEY is missing"
 
-    site_url = getattr(settings, "SITE_BASE_URL", "https://sd-agent.onrender.com")
+    # Button click karne par direct sahi domain khule bina kisi 404 ke
+    raw_site_url = os.getenv("SITE_BASE_URL", getattr(settings, "SITE_BASE_URL", "https://sd-agent.onrender.com")).strip()
+    site_url = raw_site_url.rstrip("/") + "/"
     clean_name = str(user_name).strip() if user_name else "Explorer"
 
     html_content = f"""
@@ -71,7 +73,7 @@ def send_welcome_email(user_email, user_name="Explorer"):
             </div>
 
             <div style="text-align: center; margin: 26px 0;">
-                <a href="{site_url}" class="btn">Launch SD AGENT ➔</a>
+                <a href="{site_url}" class="btn" target="_blank" rel="noopener noreferrer">Launch SD AGENT ➔</a>
             </div>
 
             <p style="font-size: 13px; color: #71717A; text-align: center;">If you didn't create this account, you can safely ignore this email.</p>
@@ -104,19 +106,19 @@ def send_welcome_email(user_email, user_name="Explorer"):
         )
         with urllib.request.urlopen(req, timeout=12) as response:
             res_body = response.read().decode("utf-8")
-            print(f"[EMAIL SUCCESS] Brevo email successfully sent to {user_email}: {res_body}")
+            print(f"[EMAIL SUCCESS] Brevo email safaltapoorvak bheja gaya {user_email}: {res_body}")
             return True, res_body
     except urllib.error.HTTPError as e:
         err_msg = e.read().decode("utf-8")
-        print(f"[EMAIL HTTP ERROR] Failed to send email to {user_email} (Code {e.code}): {err_msg}")
+        print(f"[EMAIL HTTP ERROR] Email fail ho gaya {user_email} (Code {e.code}): {err_msg}")
         return False, err_msg
     except Exception as e:
-        print(f"[EMAIL EXCEPTION] Failed to send email to {user_email}: {e}")
+        print(f"[EMAIL EXCEPTION] Error: {e}")
         return False, str(e)
 
 
 def test_welcome_view(request):
-    """Direct live tester that executes the EXACT send_welcome_email function."""
+    """Direct live test view."""
     target_email = request.GET.get("email", "sameerdarji56@gmail.com").strip()
     target_name = request.GET.get("name", "Sameer").strip()
 
@@ -130,20 +132,20 @@ def test_welcome_view(request):
 
 
 def test_email_view(request):
-    """Direct live diagnostic to check email connection via Brevo HTTP API."""
+    """Brevo API connection diagnostic."""
     target_email = request.GET.get("email", "sameerdarji56@gmail.com").strip()
     api_key = os.getenv("BREVO_API_KEY", "").strip()
     sender_email = os.getenv("SENDER_EMAIL", "sameerdarji56@gmail.com").strip()
 
     if not api_key:
         return HttpResponse(
-            "<div style='font-family:sans-serif; padding:24px;'><h2 style='color:orange;'>⚠️ BREVO_API_KEY Missing</h2><p>Please add BREVO_API_KEY in Render Environment Variables.</p></div>")
+            "<div style='font-family:sans-serif; padding:24px;'><h2 style='color:orange;'>⚠️ BREVO_API_KEY Missing</h2></div>")
 
     payload = {
         "sender": {"name": "SD AGENT", "email": sender_email},
         "to": [{"email": target_email}],
         "subject": "SD AGENT Test Connection 🚀",
-        "htmlContent": "<h3>Success!</h3><p>This is a live test from SD AGENT delivered via Brevo HTTP API without domain restrictions.</p>"
+        "htmlContent": "<h3>Success!</h3><p>Live test from SD AGENT.</p>"
     }
 
     try:
@@ -160,14 +162,14 @@ def test_email_view(request):
         with urllib.request.urlopen(req, timeout=10) as response:
             res_body = response.read().decode("utf-8")
             return HttpResponse(
-                f"<div style='font-family: sans-serif; padding: 24px;'><h2 style='color: green;'>✅ SUCCESS!</h2><p>Test email successfully dispatched to <strong>{target_email}</strong>.<br>Response: <code>{res_body}</code></p></div>")
+                f"<div style='font-family: sans-serif; padding: 24px;'><h2 style='color: green;'>✅ SUCCESS!</h2><p>Response: <code>{res_body}</code></p></div>")
     except Exception as e:
         return HttpResponse(
-            f"<div style='font-family: sans-serif; padding: 24px;'><h2 style='color: red;'>❌ ERROR: {type(e).__name__}</h2><pre style='background:#f4f4f5; padding:16px; border-radius:8px; border:1px solid #e4e4e7;'>{str(e)}</pre></div>")
+            f"<div style='font-family: sans-serif; padding: 24px;'><h2 style='color: red;'>❌ ERROR</h2><pre>{str(e)}</pre></div>")
 
 
 def chat_page(request):
-    """Serves the browser-based chat UI with cache prevention."""
+    """Chat UI."""
     is_premium = False
     display_name = ""
     if request.user.is_authenticated:
@@ -195,7 +197,7 @@ def chat_page(request):
 
 @csrf_exempt
 def google_auth_api(request):
-    """Universal Google OAuth Login Handler (Supports Redirect & Direct Token)."""
+    """Google OAuth handler."""
     access_token = request.GET.get("access_token")
     email = ""
     full_name = ""
@@ -281,7 +283,7 @@ def google_auth_api(request):
 
 
 def signup_view(request):
-    """Single-Flow Email Authentication."""
+    """Email Signup & Login."""
     if request.user.is_authenticated:
         return redirect("chat-page")
 
@@ -341,12 +343,10 @@ def signup_view(request):
 
 
 def login_view(request):
-    """Renders signup view directly."""
     return signup_view(request)
 
 
 def logout_view(request):
-    """Logs out the user, flushes session completely, and redirects directly to home chat page."""
     auth_logout(request)
     request.session.flush()
     response = HttpResponseRedirect("/")
@@ -357,12 +357,11 @@ def logout_view(request):
 
 
 def verify_email_view(request, uidb64, token):
-    """Fallback view for verify-email URL route."""
     return redirect("chat-page")
 
 
 class AgentChatView(APIView):
-    """POST /api/agent/chat/ (Supports text + image uploads)"""
+    """POST /api/agent/chat/"""
     parser_classes = [MultiPartParser, FormParser, JSONParser]
 
     def post(self, request):
@@ -484,12 +483,25 @@ class UploadFileView(APIView):
             return Response({"error": f"File too big (max {max_size_mb}MB)"}, status=status.HTTP_400_BAD_REQUEST)
 
         safe_name = os.path.basename(f.name)
+        # Media folder aur agent files dono jagah save karein taaki image gayab na ho
         dest_path = os.path.join(settings.AGENT_FILES_ROOT, safe_name)
+        media_path = os.path.join(settings.MEDIA_ROOT, safe_name)
+
         with open(dest_path, "wb+") as destination:
             for chunk in f.chunks():
                 destination.write(chunk)
 
-        return Response({"filename": safe_name}, status=status.HTTP_201_CREATED)
+        try:
+            with open(media_path, "wb+") as media_dest:
+                with open(dest_path, "rb") as src:
+                    media_dest.write(src.read())
+        except Exception:
+            pass
+
+        return Response({
+            "filename": safe_name,
+            "url": f"{settings.MEDIA_URL}{safe_name}"
+        }, status=status.HTTP_201_CREATED)
 
 
 class ShareConversationView(APIView):
@@ -497,7 +509,8 @@ class ShareConversationView(APIView):
         conversation = get_object_or_404(Conversation, id=conversation_id)
         conversation.is_shared = True
         conversation.save(update_fields=["is_shared"])
-        share_url = f"{settings.SITE_BASE_URL}/share/{conversation.id}/"
+        base_url = getattr(settings, "SITE_BASE_URL", "https://sd-agent.onrender.com").rstrip("/")
+        share_url = f"{base_url}/share/{conversation.id}/"
         return Response({"share_url": share_url})
 
 
